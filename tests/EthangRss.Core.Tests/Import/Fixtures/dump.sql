@@ -1,0 +1,11 @@
+PRAGMA defer_foreign_keys=TRUE;
+INSERT INTO "d1_migrations" ("id","name","applied_at") VALUES(1,'0000_yummy_scarecrow.sql','2026-05-09 23:07:27');
+INSERT INTO "feeds" ("id","lastFetchedAt","title","website","xmlAddress","iconUrl") VALUES('f-sub-1','2026-11-02T20:45:13.823Z','ADDitude','https://www.additudemag.com','https://www.additudemag.com/feed/','https://www.additudemag.com/icon.png?w=192&#038;crop=0');
+INSERT INTO "feeds" ("id","lastFetchedAt","title","website","xmlAddress","iconUrl") VALUES('f-sub-2','2026-11-02T20:45:14.645Z','Andrew Huberman','https://www.youtube.com/channel/x','https://www.youtube.com/feeds/videos.xml?channel_id=x','https://www.youtube.com/icon.png');
+INSERT INTO "feeds" ("id","lastFetchedAt","title","website","xmlAddress","iconUrl") VALUES('f-orphan','2026-11-02T20:45:14.645Z','Nobody Reads This','https://orphan.example.com','https://orphan.example.com/feed.xml',NULL);
+INSERT INTO "feeds" ("id","lastFetchedAt","title","website","xmlAddress","iconUrl") VALUES('f-quoted','2026-11-02T20:45:14.645Z','O''Brien on Code','https://obrien.example.com','https://obrien.example.com/rss',NULL);
+INSERT INTO "subscriptions" ("createdAt","feedId","id","userId") VALUES('2026-05-16T19:09:00.339Z','f-sub-1','s1','user_1');
+INSERT INTO "subscriptions" ("createdAt","feedId","id","userId") VALUES('2026-06-11T21:06:35.327Z','f-sub-2','s2','user_1');
+INSERT INTO "subscriptions" ("createdAt","feedId","id","userId") VALUES('2026-06-11T21:06:36.327Z','f-quoted','s3','user_1');
+INSERT INTO "subscriptions" ("createdAt","feedId","id","userId") VALUES('2026-06-11T21:06:37.327Z','f-sub-1','s4','user_1');
+INSERT INTO "articles" ("id","feedId","guid","title","link","content") VALUES('a1','f-sub-1','g1','Should not be imported','https://example.com/1','body');
