@@ -3,20 +3,159 @@
         xmlns:vm="using:EthangRss.Desktop.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="EthangRss.Desktop.Views.MainWindow"
         x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="EthangRss.Desktop">
+        Icon="/Assets/app.ico"
+        Title="Ethang RSS"
+        Width="1280" Height="820"
+        MinWidth="1000" MinHeight="600"
+        Background="{StaticResource SurfaceBrush}">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainViewModel />
     </Design.DataContext>
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+    <Grid RowDefinitions="Auto,*,Auto">
 
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceRaisedBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1" Padding="14,10">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <TextBlock Grid.Column="0" Classes="h1" Text="RSS" VerticalAlignment="Center" Margin="0,0,16,0" />
+
+                <TextBox Grid.Column="1" Name="SearchBox"
+                         Text="{Binding SearchText, Mode=TwoWay}"
+                         PlaceholderText="Search articles"
+                         Background="{StaticResource SurfaceSunkenBrush}"
+                         BorderBrush="{StaticResource LineBrush}"
+                         CornerRadius="6" Padding="10,6"
+                         VerticalAlignment="Center" MaxWidth="420" HorizontalAlignment="Left" />
+
+                <Button Grid.Column="2" Classes="ghost" Content="Refresh"
+                        Command="{Binding RefreshCommand}" Margin="12,0,0,0" />
+
+                <Button Grid.Column="3" Classes="ghost" Content="Shortcuts (?)"
+                        Click="OnShortcutsClick" Margin="6,0,0,0" />
+            </Grid>
+        </Border>
+
+        <!-- Three panes -->
+        <Grid Grid.Row="1" ColumnDefinitions="240,380,1,*">
+
+            <!-- Navigation -->
+            <Border Grid.Column="0" Background="{StaticResource SurfaceSunkenBrush}"
+                    BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
+                <ScrollViewer>
+                    <StackPanel Margin="8,10">
+                        <TextBlock Classes="kicker" Text="FOLDERS" Margin="8,4,0,6" />
+
+                        <ListBox Classes="nav" ItemsSource="{Binding Folders}"
+                                 SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:NavigationNode">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="13" />
+                                        <TextBlock Grid.Column="1" Text="{Binding UnreadCount}"
+                                                   Classes="meta" VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Classes="kicker" Text="FEEDS" Margin="8,16,0,6" />
+
+                        <ListBox Classes="nav" ItemsSource="{Binding Feeds}"
+                                 SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:NavigationNode">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <TextBlock Grid.Column="0" Text="&#x26A0;"
+                                                   Foreground="{StaticResource ErrorBrush}"
+                                                   IsVisible="{Binding HasError}" Margin="0,0,6,0" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                                   FontSize="13" TextTrimming="CharacterEllipsis" />
+                                        <Border Grid.Column="2" Classes="unread-dot"
+                                                IsVisible="{Binding HasUnread}" Margin="6,0,0,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Article list -->
+            <Border Grid.Column="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Classes="kicker" Margin="14,12,0,8"
+                               Text="{Binding SelectedNode.Title}" />
+
+                    <ListBox Grid.Row="1" Classes="articles"
+                             ItemsSource="{Binding Articles}"
+                             SelectedItem="{Binding SelectedArticle, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ArticleRowVm">
+                                <StackPanel Spacing="3">
+                                    <TextBlock Text="{Binding Title}" Classes="list-title" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Border Classes="unread-dot"
+                                                IsVisible="{Binding !IsRead}"
+                                                VerticalAlignment="Center" />
+                                        <TextBlock Classes="meta" Text="{Binding FeedTitle}" />
+                                        <TextBlock Classes="meta" Text="&#x2605;"
+                                                   Foreground="{StaticResource StarBrush}"
+                                                   IsVisible="{Binding IsStarred}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Grid.Row="1" Text="Nothing here yet"
+                               Classes="meta" HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding IsEmptyFolder}" />
+                </Grid>
+            </Border>
+
+            <GridSplitter Grid.Column="2" Width="1" Background="{StaticResource LineBrush}" />
+
+            <!-- Reader -->
+            <Grid Grid.Column="3" RowDefinitions="Auto,Auto,*">
+                <Border Grid.Row="0" Padding="24,18,24,10">
+                    <StackPanel Spacing="8">
+                        <TextBlock Classes="article-title" Text="{Binding ReaderTitle}" />
+                        <TextBlock Classes="meta" Text="{Binding ReaderMeta}" />
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Row="1" Padding="24,0,24,10" IsVisible="{Binding HasReaderArticle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Classes="ghost" Content="Open in browser"
+                                Click="OnOpenClick" />
+                        <Button Classes="ghost" Content="Star (s)" Click="OnStarClick" />
+                        <Button Classes="ghost" Content="Mark unread (m)" Click="OnToggleReadClick" />
+                    </StackPanel>
+                </Border>
+
+                <ScrollViewer Grid.Row="2" Padding="24,4,24,24" IsVisible="{Binding HasReaderArticle}">
+                    <ContentControl Name="ReaderHost" />
+                </ScrollViewer>
+
+                <TextBlock Grid.Row="2" Text="Select an article to read it" Classes="meta"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding !HasReaderArticle}" />
+            </Grid>
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="2" Background="{StaticResource SurfaceRaisedBrush}"
+                BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="14,6">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Classes="meta" Text="{Binding StatusText}" />
+                <TextBlock Grid.Column="1" Classes="meta" Text="{Binding UnreadTotal, StringFormat='{}{0} unread'}" />
+            </Grid>
+        </Border>
+    </Grid>
 </Window>

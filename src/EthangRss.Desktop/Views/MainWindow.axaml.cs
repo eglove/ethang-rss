@@ -1,11 +1,136 @@
+using System.Diagnostics;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using EthangRss.Core.Content;
+using EthangRss.Desktop.Services;
+using EthangRss.Desktop.ViewModels;
 
 namespace EthangRss.Desktop.Views;
 
 public partial class MainWindow : Window
 {
+    private readonly ImageLoader _images = new();
+
     public MainWindow()
     {
         InitializeComponent();
+
+        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private MainViewModel? Model => DataContext as MainViewModel;
+
+    private void OnDataContextChanged(object? sender, EventArgs eventArgs)
+    {
+        if (Model is not { } model)
+        {
+            return;
+        }
+
+        model.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName is nameof(MainViewModel.ReaderBody))
+            {
+                RenderBody();
+            }
+        };
+
+        model.OpenUrlRequested += (_, url) => OpenUrl(url);
+        model.FocusSearchRequested += (_, _) => this.FindControl<TextBox>("SearchBox")?.Focus();
+
+        RenderBody();
+    }
+
+    private void RenderBody()
+    {
+        var host = this.FindControl<ContentControl>("ReaderHost");
+        if (host is null)
+        {
+            return;
+        }
+
+        var model = Model;
+        var html = model?.ReaderBody;
+        var body = HtmlContent.Parse(html, model?.ReaderLink ?? "https://ethang.dev");
+        var baseUrl = model?.ReaderLink ?? string.Empty;
+
+        host.Content = ArticleRenderer.Build(
+            HtmlContent.Parse(html, baseUrl),
+            _images,
+            OpenUrl,
+            baseUrl);
+    }
+
+    private void OnKeyDown(object? sender, KeyEventArgs eventArgs)
+    {
+        if (Model is not { } model)
+        {
+            return;
+        }
+
+        var key = eventArgs.Key switch
+        {
+            Key.J => "j",
+            Key.K => "k",
+            Key.O => "o",
+            Key.S => "s",
+            Key.M => "m",
+            Key.A => eventArgs.KeyModifiers.HasFlag(KeyModifiers.Shift) ? "A" : "a",
+            Key.U => "u",
+            Key.B => "b",
+            Key.G => eventArgs.KeyModifiers.HasFlag(KeyModifiers.Shift) ? "G" : "g",
+            Key.R => "r",
+            Key.Oem2 => eventArgs.KeyModifiers.HasFlag(KeyModifiers.Shift) ? "?" : "/",
+            Key.Escape => "Escape",
+            Key.Enter => "Enter",
+            Key.Home => "Home",
+            Key.End => "End",
+            _ => null,
+        };
+
+        if (key is null)
+        {
+            return;
+        }
+
+        var command = KeyboardMap.Resolve(key, eventArgs.KeyModifiers.HasFlag(KeyModifiers.Shift), model.IsSearchFocused);
+        if (command == ReaderCommand.None)
+        {
+            return;
+        }
+
+        // Let the search box keep typing characters it owns.
+        if (!model.IsSearchFocused && command is ReaderCommand.Refresh or ReaderCommand.ToggleStar or ReaderCommand.ToggleRead
+            && this.FindControl<TextBox>("SearchBox")?.IsFocused == true)
+        {
+            return;
+        }
+
+        if (model.Run(command))
+        {
+            eventArgs.Handled = true;
+        }
+    }
+
+    private void OnOpenClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.OpenInBrowser);
+
+    private void OnStarClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ToggleStar);
+
+    private void OnToggleReadClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ToggleRead);
+
+    private void OnShortcutsClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ShowShortcuts);
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            // A broken link must not take the window down.
+        }
     }
 }

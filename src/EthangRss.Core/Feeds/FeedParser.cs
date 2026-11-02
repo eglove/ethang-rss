@@ -99,6 +99,7 @@ public static class FeedParser
             var title = ChildText(element, "title") ?? TitlePlaceholder;
             var content = ChildText(element, "content")
                           ?? ChildText(element, "summary")
+                          ?? ReadMediaBody(element)
                           ?? string.Empty;
             var guid = ChildText(element, "id") ?? link;
             var published = DateNormalizer.Parse(
@@ -168,6 +169,33 @@ public static class FeedParser
 
         var href = (string?)chosen?.Attribute("href");
         return string.IsNullOrWhiteSpace(href) ? feedAddress.GetLeftPart(UriPartial.Authority) : href.Trim();
+    }
+
+    /// <summary>
+    /// Media RSS (YouTube and podcast feeds) nests the readable text inside media:group, which
+    /// sits outside the plain Atom entry fields. The description becomes the body and the
+    /// thumbnail leads it, so a video entry still renders as something rather than a bare title.
+    /// </summary>
+    private static string? ReadMediaBody(XElement entry)
+    {
+        var group = entry.Descendants().FirstOrDefault(element => NameIs(element, "group"));
+
+        var description = group is null
+            ? ChildText(entry, "description")
+            : ChildText(group, "description") ?? ChildText(entry, "description");
+
+        var thumbnail = (group ?? entry)
+            .Descendants()
+            .FirstOrDefault(element => NameIs(element, "thumbnail"))?
+            .Attribute("url")?.Value;
+
+        if (string.IsNullOrWhiteSpace(thumbnail))
+        {
+            return string.IsNullOrWhiteSpace(description) ? null : description;
+        }
+
+        var image = "<p><img src=\"" + thumbnail + "\" alt=\"\"></p>";
+        return string.IsNullOrWhiteSpace(description) ? image : image + "<p>" + description + "</p>";
     }
 
     private static string? ResolveIcon(XElement container, string website, Uri feedAddress)

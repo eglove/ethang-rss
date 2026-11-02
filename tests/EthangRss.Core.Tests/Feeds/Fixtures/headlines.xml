@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>Headlines Only</title>
+  <link>https://headlines.example.com/</link>
+  <item>
+    <title>Only a headline</title>
+    <link>https://headlines.example.com/one</link>
+    <guid>h1</guid>
+    <pubDate>Fri, 30 Oct 2026 17:57:24 GMT</pubDate>
+  </item>
+</channel></rss>

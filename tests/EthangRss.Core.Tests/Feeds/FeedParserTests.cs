@@ -132,4 +132,31 @@ public sealed class FeedParserTests
 
         Assert.Equal("https://example.com/favicon.ico", feed.IconUrl);
     }
+
+    [Fact]
+    public void Media_description_inside_a_media_group_becomes_the_body()
+    {
+        var feed = FeedParser.Parse(Fixture("youtube.xml"), new Uri("https://www.youtube.com/feeds/videos.xml?channel_id=UC123")).Feed!;
+
+        var entry = Assert.Single(feed.Items);
+        Assert.Contains("The video description text.", entry.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Media_thumbnail_is_kept_as_an_image_in_the_body()
+    {
+        var feed = FeedParser.Parse(Fixture("youtube.xml"), new Uri("https://www.youtube.com/feeds/videos.xml?channel_id=UC123")).Feed!;
+
+        var entry = Assert.Single(feed.Items);
+        Assert.Contains("https://i2.ytimg.com/vi/abc/hqdefault.jpg", entry.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_feed_with_no_body_leaves_content_empty_rather_than_inventing_one()
+    {
+        var feed = FeedParser.Parse(Fixture("headlines.xml"), new Uri("https://headlines.example.com/feed.xml")).Feed!;
+
+        var item = Assert.Single(feed.Items);
+        Assert.Equal(string.Empty, item.Content);
+    }
 }

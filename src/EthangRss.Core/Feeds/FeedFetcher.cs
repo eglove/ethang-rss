@@ -1,10 +1,12 @@
+using EthangRss.Core.Polling;
+
 namespace EthangRss.Core.Feeds;
 
 /// <summary>
 /// One HTTP surface for every feed request. Never throws for feed-level problems:
 /// a bad response is a <see cref="FetchOutcome.Failure"/> the caller records and moves on from.
 /// </summary>
-public sealed class FeedFetcher
+public sealed class FeedFetcher : IFeedSource
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
 
