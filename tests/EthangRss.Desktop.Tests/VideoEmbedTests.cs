@@ -27,6 +27,7 @@ public sealed class VideoEmbedTests
     {
         var video = MediaLinks.Resolve("https://www.youtube.com/watch?v=dQw4w9WgXcQ")!;
 
-        Assert.Contains("youtube-nocookie.com/embed/dQw4w9WgXcQ", video.EmbedUrl!, StringComparison.Ordinal);
+        Assert.Contains("youtube.com/embed/dQw4w9WgXcQ", video.EmbedUrl!, StringComparison.Ordinal);
     }
+
 }

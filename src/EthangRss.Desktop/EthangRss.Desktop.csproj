@@ -8,7 +8,11 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyName>EthangRss</AssemblyName>
     <RootNamespace>EthangRss.Desktop</RootNamespace>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <!-- Package as one self-contained executable, but only when publishing: keeping these on for
+       every build makes the project unreferenceable from the test projects. -->
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true' or '$(RuntimeIdentifier)' != ''">
     <SelfContained>true</SelfContained>
     <PublishSingleFile>true</PublishSingleFile>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
@@ -22,14 +26,6 @@
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
-  <!-- Skia and HarfBuzz ship debug symbols as package content; they are not needed to run. -->
-  <Target Name="StripNativeSymbols" AfterTargets="Publish">
-    <ItemGroup>
-      <Strippable Include="$(PublishDir)**\*.pdb" />
-    </ItemGroup>
-    <Delete Files="@(Strippable)" />
-  </Target>
-
   <ItemGroup>
     <ProjectReference Include="..\EthangRss.Core\EthangRss.Core.csproj" />
   </ItemGroup>
@@ -39,8 +35,16 @@
     <PackageReference Include="Avalonia.Desktop" Version="12.1.5" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.5" />
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
+
+  <!-- Skia and HarfBuzz ship debug symbols as package content; they are not needed to run. -->
+  <Target Name="StripNativeSymbols" AfterTargets="Publish">
+    <ItemGroup>
+      <Strippable Include="$(PublishDir)**\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(Strippable)" />
+  </Target>
 
 </Project>

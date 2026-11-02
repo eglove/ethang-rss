@@ -18,17 +18,29 @@ public static class ArticleRenderer
     {
         var panel = new StackPanel { Spacing = 14 };
 
-        if (body.IsEmpty)
+        // A video article is watched, not read. This decision follows the link, not whether the
+        // feed happened to supply a description: YouTube feeds often do, and the player still
+        // belongs above it.
+        if (VideoEmbed.TryBuild(sourceLink) is { } player)
         {
-            // A video article has no body worth reading; play it instead.
-            if (VideoEmbed.TryBuild(sourceLink) is { } player)
+            panel.Children.Add(player);
+
+            foreach (var block in body.Blocks)
             {
-                panel.Children.Add(player);
-                return panel;
+                var below = BuildBlock(block, images, openUrl);
+                if (below is not null)
+                {
+                    panel.Children.Add(below);
+                }
             }
 
-            // Otherwise there is genuinely no content: say so once, plainly, and leave the
-            // toolbar's Open in browser as the only way out.
+            return panel;
+        }
+
+        if (body.IsEmpty)
+        {
+            // No player and no content: say so once, plainly, and leave the toolbar's
+            // Open in browser as the only way out.
             panel.Children.Add(new TextBlock
             {
                 Text = "This feed publishes headlines without article text.",

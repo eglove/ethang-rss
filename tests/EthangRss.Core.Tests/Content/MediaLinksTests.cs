@@ -33,10 +33,10 @@ public sealed class MediaLinksTests
     }
 
     [Fact]
-    public void The_embed_uses_the_privacy_preserving_domain()
+    public void The_embed_points_at_the_youtube_player()
     {
         var video = MediaLinks.Resolve("https://youtu.be/dQw4w9WgXcQ")!;
 
-        Assert.StartsWith("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", video.EmbedUrl, StringComparison.Ordinal);
+        Assert.StartsWith("https://www.youtube.com/embed/dQw4w9WgXcQ", video.EmbedUrl, StringComparison.Ordinal);
     }
 }

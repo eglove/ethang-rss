@@ -7,7 +7,7 @@ public sealed record VideoReference(string Provider, string Id)
 {
     /// <summary>The embeddable player address, or null when this build will not build one.</summary>
     public string? EmbedUrl => Provider == "youtube"
-        ? "https://www.youtube-nocookie.com/embed/" + Id + "?rel=0"
+        ? "https://www.youtube.com/embed/" + Id + "?rel=0&modestbranding=1"
         : null;
 }
 
