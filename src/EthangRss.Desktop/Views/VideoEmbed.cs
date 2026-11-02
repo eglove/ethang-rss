@@ -41,14 +41,24 @@ public static class VideoEmbed
                 AdapterPreference = [WebViewAdapterType.WebView2],
             };
 
-            // WebView2 supplies a real browser identity and origin, which moved the provider from
-            // refusing the client outright (error 153) to loading its player at all.
-            //
-            // Known limitation: the provider also checks the referring page, and this wrapper cannot
-            // supply one. Its resource filter is registered only when a handler subscribes before the
-            // adapter exists, and the adapter is created on attach, so WebResourceRequested is inert
-            // here. Until that is fixed upstream the player reports the video as unavailable, and the
-            // Watch on YouTube action inside it is the way out.
+            // Proven experimentally: without a referrer the provider refuses the client outright
+            // (error 153); with one it loads its player and evaluates the stream request.
+            view.WebResourceRequested += (_, eventArgs) =>
+            {
+                var headers = eventArgs.Request.Headers;
+                headers.TrySet("Referer", OriginatingPage.ToString());
+
+                // A real Edge tab also announces how the request was initiated and which browser
+                // build it comes from. The surface does not send these itself, and the provider
+                // treats their absence as an unidentifiable client.
+                headers.TrySet("Sec-Fetch-Dest", "iframe");
+                headers.TrySet("Sec-Fetch-Mode", "navigate");
+                headers.TrySet("Sec-Fetch-Site", "cross-site");
+                headers.TrySet("Sec-Fetch-User", "?1");
+                headers.TrySet("Sec-CH-UA", "\"Chromium\";v=\"156\", \"Not=A?Brand\";v=\"24\", \"Microsoft Edge\";v=\"156\"");
+                headers.TrySet("Sec-CH-UA-Mobile", "?0");
+                headers.TrySet("Sec-CH-UA-Platform", "\"Windows\"");
+            };
 
             view.Source = source;
             return new BuildAttempt(view, source, null);
