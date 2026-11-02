@@ -15,13 +15,15 @@ public sealed class PollScheduler
     private readonly FeedRepository _repository;
     private readonly PollOptions _options;
     private readonly Func<DateTimeOffset> _clock;
+    private readonly Func<bool> _filterShorts;
 
     public PollScheduler(
         AppDatabase database,
         IFeedSource source,
         FeedRepository repository,
         PollOptions options,
-        Func<DateTimeOffset> clock)
+        Func<DateTimeOffset> clock,
+        Func<bool>? filterShorts = null)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(source);
@@ -34,6 +36,7 @@ public sealed class PollScheduler
         _repository = repository;
         _options = options;
         _clock = clock;
+        _filterShorts = filterShorts ?? (() => true);
     }
 
     /// <summary>True while a pass is running, so the UI can disable refresh.</summary>
@@ -82,6 +85,7 @@ public sealed class PollScheduler
 
                     if (outcome.IsSuccess)
                     {
+                        _repository.FilterYoutubeShorts = _filterShorts();
                         inserted = _repository.UpsertArticles(feed.Id, outcome.Feed!.Items);
                         _repository.RecordFetchSuccess(feed.Id, outcome.Feed, _clock());
                     }

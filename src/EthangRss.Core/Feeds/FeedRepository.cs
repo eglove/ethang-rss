@@ -18,6 +18,9 @@ public sealed class FeedRepository
     /// Inserts the articles that are not yet stored and returns how many were new.
     /// Dedupe is the (FeedId, Guid) unique constraint, so a re-fetch of the same window is free.
     /// </summary>
+    /// <summary>Set false to keep YouTube Shorts. Default matches the app's default setting.</summary>
+    public bool FilterYoutubeShorts { get; set; } = true;
+
     public int UpsertArticles(long feedId, IReadOnlyList<FeedItem> items)
     {
         if (items.Count == 0)
@@ -47,7 +50,7 @@ public sealed class FeedRepository
 
         foreach (var item in items)
         {
-            if (string.IsNullOrWhiteSpace(item.Guid) || ShortsFilter.IsShorts(item.Link))
+            if (string.IsNullOrWhiteSpace(item.Guid) || (FilterYoutubeShorts && ShortsFilter.IsShorts(item.Link)))
             {
                 continue;
             }

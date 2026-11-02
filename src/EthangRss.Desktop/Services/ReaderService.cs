@@ -38,7 +38,8 @@ public sealed class ReaderService : IReaderService, IDisposable
             new FeedFetcher(_client),
             new FeedRepository(database),
             options,
-            () => DateTimeOffset.UtcNow);
+            () => DateTimeOffset.UtcNow,
+            () => _settings.GetBool(SettingKeys.FilterYoutubeShorts, true));
     }
 
     public Core.Subscriptions.FeedSubscriptions Subscriptions { get; }

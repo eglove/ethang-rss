@@ -12,7 +12,13 @@ public static class FeedParser
 {
     private const string TitlePlaceholder = "No Title";
 
-    public static ParseResult Parse(string xml, Uri feedAddress)
+    public static ParseResult Parse(string xml, Uri feedAddress) => Parse(xml, feedAddress, filterShorts: true);
+
+    /// <summary>
+    /// Parses a document. The filter flag lets the caller keep YouTube Shorts when the user has
+    /// turned that filter off.
+    /// </summary>
+    public static ParseResult Parse(string xml, Uri feedAddress, bool filterShorts)
     {
         ArgumentNullException.ThrowIfNull(feedAddress);
 
@@ -54,8 +60,8 @@ public static class FeedParser
                 : ResolveRssFeedWebsite(container, feedAddress);
 
             var items = isAtom
-                ? ReadEntries(container, feedAddress)
-                : ReadItems(container, feedAddress);
+                ? ReadEntries(container, feedAddress, filterShorts)
+                : ReadItems(container, feedAddress, filterShorts);
 
             return ParseResult.Success(new ParsedFeed(
                 title.Trim(),
@@ -69,7 +75,7 @@ public static class FeedParser
         }
     }
 
-    private static List<FeedItem> ReadItems(XElement channel, Uri feedAddress)
+    private static List<FeedItem> ReadItems(XElement channel, Uri feedAddress, bool filterShorts)
     {
         var items = new List<FeedItem>();
         foreach (var element in channel.Elements().Where(element => NameIs(element, "item")))
@@ -84,13 +90,13 @@ public static class FeedParser
             var published = DateNormalizer.Parse(
                 ChildText(element, "pubDate") ?? ChildText(element, "date") ?? ChildText(element, "published"));
 
-            Add(items, guid, title, link, content, published, feedAddress);
+            Add(items, guid, title, link, content, published, feedAddress, filterShorts);
         }
 
         return items;
     }
 
-    private static List<FeedItem> ReadEntries(XElement feed, Uri feedAddress)
+    private static List<FeedItem> ReadEntries(XElement feed, Uri feedAddress, bool filterShorts)
     {
         var items = new List<FeedItem>();
         foreach (var element in feed.Elements().Where(element => NameIs(element, "entry")))
@@ -105,7 +111,7 @@ public static class FeedParser
             var published = DateNormalizer.Parse(
                 ChildText(element, "published") ?? ChildText(element, "updated"));
 
-            Add(items, guid, title, link, content, published, feedAddress);
+            Add(items, guid, title, link, content, published, feedAddress, filterShorts);
         }
 
         return items;
@@ -118,10 +124,11 @@ public static class FeedParser
         string link,
         string content,
         DateTimeOffset? published,
-        Uri feedAddress)
+        Uri feedAddress,
+        bool filterShorts)
     {
         var absolute = MakeAbsolute(link, feedAddress);
-        if (ShortsFilter.IsShorts(absolute))
+        if (filterShorts && ShortsFilter.IsShorts(absolute))
         {
             return;
         }
