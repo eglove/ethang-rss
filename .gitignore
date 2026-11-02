@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+
+# Local data and the D1 migration dump (re-derivable, never committed)
+tmp/
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vs/
+.idea/
+*.user
