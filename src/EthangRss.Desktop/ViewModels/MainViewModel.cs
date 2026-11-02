@@ -13,6 +13,7 @@ public sealed partial class MainViewModel : ViewModelBase
 {
     private readonly IReaderService _service;
     private bool _suppressSelection;
+    private long? _suppressedReadFor;
 
     public MainViewModel(IReaderService service)
     {
@@ -133,10 +134,15 @@ public sealed partial class MainViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(IsEmptyFolder));
-        SelectArticle(Articles.FirstOrDefault());
+        ShowArticle(Articles.FirstOrDefault(), markRead: false);
     }
 
-    private void SelectArticle(ArticleRowVm? row)
+    /// <summary>
+    /// Shows an article. When <paramref name="markRead"/> is set and the article is unread, it is
+    /// marked read: this is the single place reading happens, whether by clicking, by pressing j,
+    /// or by loading a folder onto an unread article.
+    /// </summary>
+    private void ShowArticle(ArticleRowVm? row, bool markRead = true)
     {
         _suppressSelection = true;
         try
@@ -176,7 +182,7 @@ public sealed partial class MainViewModel : ViewModelBase
         ReaderIsRead = detail.IsRead;
         OnPropertyChanged(nameof(HasReaderArticle));
 
-        if (!detail.IsRead)
+        if (markRead && !detail.IsRead && _suppressedReadFor != detail.Id)
         {
             _service.MarkRead(detail.Id, true);
             ReaderIsRead = true;
@@ -194,9 +200,14 @@ public sealed partial class MainViewModel : ViewModelBase
 
     partial void OnSelectedArticleChanged(ArticleRowVm? value)
     {
+        if (value is not null && value.Id != _suppressedReadFor)
+        {
+            _suppressedReadFor = null;
+        }
+
         if (!_suppressSelection && value is not null)
         {
-            SelectArticle(value);
+            ShowArticle(value);
         }
     }
 
@@ -272,8 +283,12 @@ public sealed partial class MainViewModel : ViewModelBase
             return false;
         }
 
-        var current = SelectedArticle is null ? -1 : Articles.IndexOf(SelectedArticle);
+        var current = SelectedArticle is null
+            ? (delta >= 0 ? -1 : Articles.Count)
+            : Articles.IndexOf(SelectedArticle);
+
         var next = Math.Clamp(current + delta, 0, Articles.Count - 1);
+
         SelectedArticle = Articles[next];
         return true;
     }
@@ -319,9 +334,17 @@ public sealed partial class MainViewModel : ViewModelBase
             return false;
         }
 
-        var next = !SelectedArticle.IsRead;
+        // The row in the list is a snapshot; the row that counts is the stored one.
+        var current = _service.GetArticle(SelectedArticle.Id)?.IsRead ?? SelectedArticle.IsRead;
+        var next = !current;
         _service.MarkRead(SelectedArticle.Id, next);
         ReaderIsRead = next;
+
+        // Remember the explicit choice so re-selecting the row cannot silently reverse it.
+        _suppressedReadFor = next ? null : SelectedArticle.Id;
+
+        // Only the counts change; reloading the list would re-select the article and undo this
+        // by marking it read again on selection.
         LoadNavigation();
         return true;
     }

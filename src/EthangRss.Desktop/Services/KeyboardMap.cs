@@ -37,7 +37,7 @@ public static class KeyboardMap
             };
         }
 
-        if (key is "?" or "/" && shift)
+        if (key == "?")
         {
             return ReaderCommand.ShowShortcuts;
         }
