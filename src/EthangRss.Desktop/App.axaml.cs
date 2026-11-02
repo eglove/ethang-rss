@@ -36,6 +36,8 @@ public partial class App : Application
                 () => settings.GetBool(SettingKeys.NotificationsEnabled, false),
                 () => settings.GetInt(SettingKeys.NotificationThreshold, 1));
 
+            ShowOnboardingIfNeeded(database, settings);
+
             var viewModel = new MainViewModel(service);
             var window = new MainWindow { DataContext = viewModel };
             desktop.MainWindow = window;
@@ -55,6 +57,18 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void ShowOnboardingIfNeeded(AppDatabase database, SettingsStore settings)
+    {
+        var model = new OnboardingViewModel(settings, path => new Core.Import.SubscriptionImporter(database).Import(path));
+        if (model.IsComplete)
+        {
+            return;
+        }
+
+        // Shown before the reader exists, so it is a standalone dialog rather than modal to it.
+        new OnboardingWindow(model).Show();
     }
 
     private void BuildTray(
