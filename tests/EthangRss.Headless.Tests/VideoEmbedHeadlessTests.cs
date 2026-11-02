@@ -1,7 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using Xunit;
+using Avalonia.Platform;
 using EthangRss.Desktop.Views;
+using Xunit;
 
 namespace EthangRss.Headless.Tests;
 
@@ -10,27 +11,35 @@ public sealed class VideoEmbedHeadlessTests
     [AvaloniaFact]
     public void The_embed_builds_a_player_for_a_youtube_watch_link()
     {
-        var control = VideoEmbed.TryBuildRaw("https://www.youtube.com/watch?v=k5ybiDRnR5Y");
+        var attempt = VideoEmbed.TryBuildRaw("https://www.youtube.com/watch?v=k5ybiDRnR5Y");
 
-        Assert.True(control.Built, control.Error ?? "no error reported");
-        Assert.NotNull(control.Control);
+        Assert.True(attempt.Built, attempt.Error ?? "no error reported");
     }
 
     [AvaloniaFact]
-    public void The_embed_asks_for_the_privacy_domain()
+    public void The_player_is_pinned_to_the_webview2_adapter()
     {
-        var control = VideoEmbed.TryBuildRaw("https://youtu.be/dQw4w9WgXcQ");
+        var attempt = VideoEmbed.TryBuildRaw("https://www.youtube.com/watch?v=k5ybiDRnR5Y");
+        var view = Assert.IsType<NativeWebView>(attempt.Control);
 
-        Assert.True(control.Built, control.Error ?? "no error reported");
-        Assert.Contains("youtube.com/embed/dQw4w9WgXcQ", control.Source!.AbsoluteUri, StringComparison.Ordinal);
+        Assert.Equal([WebViewAdapterType.WebView2], view.AdapterPreference!);
+    }
+
+    [AvaloniaFact]
+    public void The_player_is_asked_for_the_video_embed_address()
+    {
+        var attempt = VideoEmbed.TryBuildRaw("https://youtu.be/dQw4w9WgXcQ");
+
+        Assert.True(attempt.Built, attempt.Error ?? "no error reported");
+        Assert.Contains("youtube.com/embed/dQw4w9WgXcQ", attempt.Source!.AbsoluteUri, StringComparison.Ordinal);
     }
 
     [AvaloniaFact]
     public void A_plain_article_builds_no_player()
     {
-        var control = VideoEmbed.TryBuildRaw("https://example.com/blog/post");
+        var attempt = VideoEmbed.TryBuildRaw("https://example.com/blog/post");
 
-        Assert.False(control.Built);
-        Assert.Null(control.Control);
+        Assert.False(attempt.Built);
+        Assert.Null(attempt.Control);
     }
 }
