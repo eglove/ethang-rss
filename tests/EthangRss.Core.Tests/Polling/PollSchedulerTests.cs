@@ -45,6 +45,9 @@ public sealed class PollSchedulerTests : IDisposable
             }
         }
 
+        public Task<string?> FetchPageAsync(string address, CancellationToken cancellationToken) =>
+            Task.FromResult<string?>(null);
+
         private static void InterlockedMax(ref int target, int value)
         {
             int previous;
@@ -208,6 +211,9 @@ public sealed class PollSchedulerTests : IDisposable
 
     private sealed class ItemFetcher : IFeedSource
     {
+        public Task<string?> FetchPageAsync(string address, CancellationToken cancellationToken) =>
+            Task.FromResult<string?>(null);
+
         public Task<FetchOutcome> FetchAsync(string xmlAddress, CancellationToken cancellationToken)
         {
             return Task.FromResult(FetchOutcome.Success(new ParsedFeed(

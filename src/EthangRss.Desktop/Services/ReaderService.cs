@@ -17,18 +17,21 @@ public sealed class ReaderService : IReaderService, IDisposable
     private readonly HttpClient _client;
     private readonly CancellationTokenSource _shutdown = new();
 
-    public ReaderService(AppDatabase database)
+    public ReaderService(AppDatabase database, SettingsStore settings)
     {
         ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(settings);
         _database = database;
         _queries = new ReaderQueries(database);
-        _settings = new SettingsStore(database);
+        _settings = settings;
         _client = new HttpClient();
 
         var options = new PollOptions
         {
             IntervalMinutes = _settings.GetInt(SettingKeys.RefreshIntervalMinutes, 30),
         };
+
+        Subscriptions = new Core.Subscriptions.FeedSubscriptions(database, new FeedFetcher(_client));
 
         _scheduler = new PollScheduler(
             database,
@@ -37,6 +40,12 @@ public sealed class ReaderService : IReaderService, IDisposable
             options,
             () => DateTimeOffset.UtcNow);
     }
+
+    public Core.Subscriptions.FeedSubscriptions Subscriptions { get; }
+
+    public SettingsStore Settings => _settings;
+
+    public AppDatabase Database => _database;
 
     public IReadOnlyList<FeedSummaryVm> GetFeeds() =>
         _queries.GetFeeds()
@@ -111,19 +120,21 @@ public sealed class ReaderService : IReaderService, IDisposable
     }
 
     /// <summary>Polls once at startup and then on the configured interval until shutdown.</summary>
-    public async Task StartPollingAsync(MainViewModel viewModel, CancellationToken cancellationToken)
+    public bool IsQuitting { get; set; }
+
+    public async Task StartPollingAsync(MainViewModel viewModel, Notifier notifier, CancellationToken cancellationToken)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdown.Token);
 
         try
         {
-            await PollOnceAsync(viewModel, linked.Token).ConfigureAwait(false);
+            await PollOnceAsync(viewModel, notifier, linked.Token).ConfigureAwait(false);
 
             while (!linked.IsCancellationRequested)
             {
                 var minutes = Math.Max(1, _settings.GetInt(SettingKeys.RefreshIntervalMinutes, 30));
                 await Task.Delay(TimeSpan.FromMinutes(minutes), linked.Token).ConfigureAwait(false);
-                await PollOnceAsync(viewModel, linked.Token).ConfigureAwait(false);
+                await PollOnceAsync(viewModel, notifier, linked.Token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -132,13 +143,18 @@ public sealed class ReaderService : IReaderService, IDisposable
         }
     }
 
-    private async Task PollOnceAsync(MainViewModel viewModel, CancellationToken cancellationToken)
+    private async Task PollOnceAsync(MainViewModel viewModel, Notifier notifier, CancellationToken cancellationToken)
     {
         try
         {
             var summary = await _scheduler.RunOnceAsync(cancellationToken).ConfigureAwait(false);
             _settings.Set(SettingKeys.LastPolledAt, DateTimeOffset.UtcNow.ToString("O"));
             ApplyRetention();
+
+            if (summary.NewArticles > 0)
+            {
+                notifier.Notify(summary.NewArticles);
+            }
 
             if (summary.Polled > 0)
             {

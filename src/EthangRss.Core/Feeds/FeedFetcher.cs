@@ -22,6 +22,28 @@ public sealed class FeedFetcher : IFeedSource
         _client.Timeout = RequestTimeout;
     }
 
+    public async Task<string?> FetchPageAsync(string address, CancellationToken cancellationToken)
+    {
+        if (!Uri.TryCreate(address, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+            request.Headers.TryAddWithoutValidation("User-Agent", UserAgent);
+            using var response = await _client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)
+                : null;
+        }
+        catch (Exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            return null;
+        }
+    }
+
     public async Task<FetchOutcome> FetchAsync(string xmlAddress, CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(xmlAddress, UriKind.Absolute, out var address))

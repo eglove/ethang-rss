@@ -1,6 +1,7 @@
 # Build output
 bin/
 obj/
+publish/
 
 # Local data and the D1 migration dump (re-derivable, never committed)
 tmp/

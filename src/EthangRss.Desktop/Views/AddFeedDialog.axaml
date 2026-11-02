@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EthangRss.Desktop.Views.AddFeedDialog"
+        Title="Add a feed"
+        Width="520" Height="260"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{StaticResource SurfaceBrush}">
+
+    <Grid Margin="22" RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <TextBlock Grid.Row="0" Classes="h1" Text="Add a feed" Margin="0,0,0,6" />
+        <TextBlock Grid.Row="1" Classes="meta" TextWrapping="Wrap"
+                   Text="Paste a feed address, or any website and the app will find its feed." />
+
+        <TextBox Grid.Row="2" Name="AddressBox" Margin="0,14,0,0"
+                 PlaceholderText="https://example.com/feed.xml"
+                 Background="{StaticResource SurfaceSunkenBrush}"
+                 BorderBrush="{StaticResource LineBrush}"
+                 CornerRadius="6" Padding="10,8" />
+
+        <TextBlock Grid.Row="3" Name="StatusText" Classes="meta" Margin="0,10,0,0"
+                   TextWrapping="Wrap" VerticalAlignment="Top" />
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Name="CancelButton" Content="Cancel" Classes="ghost" Click="OnCancel" />
+            <Button Name="AddButton" Content="Add feed" Click="OnAdd" Padding="16,7" />
+        </StackPanel>
+    </Grid>
+</Window>

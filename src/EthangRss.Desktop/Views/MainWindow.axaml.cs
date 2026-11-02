@@ -11,6 +11,7 @@ namespace EthangRss.Desktop.Views;
 public partial class MainWindow : Window
 {
     private readonly ImageLoader _images = new();
+    private EthangRss.Core.Subscriptions.FeedSubscriptions? _subscriptions;
 
     public MainWindow()
     {
@@ -36,6 +37,8 @@ public partial class MainWindow : Window
                 RenderBody();
             }
         };
+
+        _subscriptions ??= App.Services?.Subscriptions;
 
         model.OpenUrlRequested += (_, url) => OpenUrl(url);
         model.FocusSearchRequested += (_, _) => this.FindControl<TextBox>("SearchBox")?.Focus();
@@ -121,6 +124,35 @@ public partial class MainWindow : Window
     private void OnToggleReadClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ToggleRead);
 
     private void OnShortcutsClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ShowShortcuts);
+
+    private async void OnSettingsClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (App.Services is not { } services)
+        {
+            return;
+        }
+
+        var model = new SettingsViewModel(services.Settings, services.Database, () => DateTimeOffset.UtcNow);
+        var dialog = new SettingsWindow(model, services.Database);
+        await dialog.ShowDialog(this);
+
+        Model?.Load();
+    }
+
+    private async void OnAddFeedClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (DataContext is not MainViewModel || _subscriptions is null)
+        {
+            return;
+        }
+
+        var dialog = new AddFeedDialog(_subscriptions);
+        var added = await dialog.ShowDialog<long?>(this);
+        if (added is not null)
+        {
+            Model?.Load();
+        }
+    }
 
     private static void OpenUrl(string url)
     {

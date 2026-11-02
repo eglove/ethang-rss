@@ -8,11 +8,27 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AssemblyName>EthangRss</AssemblyName>
     <RootNamespace>EthangRss.Desktop</RootNamespace>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
+
+  <!-- Skia and HarfBuzz ship debug symbols as package content; they are not needed to run. -->
+  <Target Name="StripNativeSymbols" AfterTargets="Publish">
+    <ItemGroup>
+      <Strippable Include="$(PublishDir)**\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(Strippable)" />
+  </Target>
 
   <ItemGroup>
     <ProjectReference Include="..\EthangRss.Core\EthangRss.Core.csproj" />

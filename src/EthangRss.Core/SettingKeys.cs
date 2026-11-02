@@ -8,6 +8,7 @@ public static class SettingKeys
     public const string RetentionDays = "RetentionDays";
     public const string FilterYoutubeShorts = "FilterYoutubeShorts";
     public const string NotificationsEnabled = "NotificationsEnabled";
+    public const string NotificationThreshold = "NotificationThreshold";
     public const string StartWithWindows = "StartWithWindows";
     public const string OnboardingComplete = "OnboardingComplete";
     public const string LastPolledAt = "LastPolledAt";

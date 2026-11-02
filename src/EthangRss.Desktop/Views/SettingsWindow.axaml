@@ -1,0 +1,74 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:EthangRss.Desktop.ViewModels"
+        x:Class="EthangRss.Desktop.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="Settings"
+        Width="560" Height="620"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource SurfaceBrush}">
+
+    <Grid Margin="24" RowDefinitions="Auto,*,Auto">
+        <TextBlock Grid.Row="0" Classes="h1" Text="Settings" Margin="0,0,0,16" />
+
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="18">
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="kicker" Text="REFRESH" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="Check every" VerticalAlignment="Center" FontSize="13" />
+                        <NumericUpDown Value="{Binding RefreshIntervalMinutes}" Minimum="1" Maximum="1440" Width="120" />
+                        <TextBlock Text="minutes" VerticalAlignment="Center" FontSize="13" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="kicker" Text="ARTICLE HISTORY" />
+                    <CheckBox Content="Keep every article forever" IsChecked="{Binding KeepArticlesForever}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10" IsEnabled="{Binding RetentionEnabled}">
+                        <TextBlock Text="Delete older than" VerticalAlignment="Center" FontSize="13" />
+                        <NumericUpDown Value="{Binding RetentionDays}" Minimum="1" Maximum="3650" Width="120" />
+                        <TextBlock Text="days (starred are kept)" VerticalAlignment="Center" FontSize="13" />
+                    </StackPanel>
+                    <Button Content="Clean up now" Classes="ghost" HorizontalAlignment="Left" Click="OnCleanupClick" />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="kicker" Text="FEEDS" />
+                    <CheckBox Content="Filter out YouTube Shorts" IsChecked="{Binding FilterYoutubeShorts}" />
+                    <TextBlock Classes="meta" TextWrapping="Wrap"
+                               Text="Shorts are video clips, not articles. Turning this off lets them into the list." />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="kicker" Text="NOTIFICATIONS" />
+                    <CheckBox Content="Notify me about new articles" IsChecked="{Binding NotificationsEnabled}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="when at least" VerticalAlignment="Center" FontSize="13" />
+                        <NumericUpDown Value="{Binding NotificationThreshold}" Minimum="1" Maximum="500" Width="100" />
+                        <TextBlock Text="new articles arrive" VerticalAlignment="Center" FontSize="13" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="kicker" Text="STARTUP" />
+                    <CheckBox Content="Start with Windows" IsChecked="{Binding StartWithWindows}" />
+                </StackPanel>
+
+                <StackPanel Spacing="6">
+                    <TextBlock Classes="kicker" Text="DATA" />
+                    <SelectableTextBlock Text="{Binding DatabasePath}" Classes="meta" TextWrapping="Wrap" />
+                    <Button Content="Open database folder" Classes="ghost" HorizontalAlignment="Left" Click="OnOpenFolderClick" />
+                </StackPanel>
+
+                <TextBlock Classes="meta" Text="{Binding StatusText}" />
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+            <Button Content="Close" Classes="ghost" Click="OnCloseClick" />
+            <Button Content="Save" Padding="18,8" Click="OnSaveClick" />
+        </StackPanel>
+    </Grid>
+</Window>
