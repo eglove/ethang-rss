@@ -121,7 +121,13 @@ public partial class MainWindow : Window
 
     private void OnStarClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ToggleStar);
 
-    private void OnToggleReadClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ToggleRead);
+    private void OnToggleReadClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (Model?.Run(ReaderCommand.ToggleRead) == true)
+        {
+            Model.RefreshArticleList();
+        }
+    }
 
     private void OnShortcutsClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ShowShortcuts);
 

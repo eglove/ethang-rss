@@ -20,26 +20,22 @@ public static class ArticleRenderer
 
         if (body.IsEmpty)
         {
+            // A video article has no body worth reading; play it instead.
+            if (VideoEmbed.TryBuild(sourceLink) is { } player)
+            {
+                panel.Children.Add(player);
+                return panel;
+            }
+
+            // Otherwise there is genuinely no content: say so once, plainly, and leave the
+            // toolbar's Open in browser as the only way out.
             panel.Children.Add(new TextBlock
             {
-                Text = "This feed published only a headline, so there is nothing to show here.",
+                Text = "This feed publishes headlines without article text.",
                 TextWrapping = TextWrapping.Wrap,
                 Foreground = Brushes.Gray,
                 FontSize = 14,
             });
-
-            if (sourceLink is { Length: > 0 })
-            {
-                var button = new Button
-                {
-                    Content = "Read it on the web",
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    Padding = new Thickness(14, 8),
-                };
-
-                button.Click += (_, _) => openUrl(sourceLink);
-                panel.Children.Add(button);
-            }
 
             return panel;
         }

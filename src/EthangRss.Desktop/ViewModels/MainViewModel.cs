@@ -80,6 +80,14 @@ public sealed partial class MainViewModel : ViewModelBase
 
     public bool HasReaderArticle => !string.IsNullOrEmpty(ReaderTitle);
 
+    /// <summary>The explicit read toggle's label, which follows the article's actual state.</summary>
+    public string ReadToggleLabel => ReaderIsRead ? "Mark unread" : "Mark read";
+
+    partial void OnReaderIsReadChanged(bool value) => OnPropertyChanged(nameof(ReadToggleLabel));
+
+    /// <summary>Re-reads the current folder so a changed read state shows up in the list.</summary>
+    public void RefreshArticleList() => LoadArticles();
+
     public IReadOnlyList<(string Keys, string Description)> Shortcuts => KeyboardMap.CheatSheet;
 
     public event EventHandler<string>? OpenUrlRequested;
@@ -134,15 +142,14 @@ public sealed partial class MainViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(IsEmptyFolder));
-        ShowArticle(Articles.FirstOrDefault(), markRead: false);
+        ShowArticle(Articles.FirstOrDefault());
     }
 
     /// <summary>
-    /// Shows an article. When <paramref name="markRead"/> is set and the article is unread, it is
-    /// marked read: this is the single place reading happens, whether by clicking, by pressing j,
-    /// or by loading a folder onto an unread article.
+    /// Shows an article. Selection never changes read state: marking read is an explicit act, by the
+    /// button, the m key, or Shift+A. This is the single place the reader pane is filled.
     /// </summary>
-    private void ShowArticle(ArticleRowVm? row, bool markRead = true)
+    private void ShowArticle(ArticleRowVm? row)
     {
         _suppressSelection = true;
         try
@@ -182,12 +189,6 @@ public sealed partial class MainViewModel : ViewModelBase
         ReaderIsRead = detail.IsRead;
         OnPropertyChanged(nameof(HasReaderArticle));
 
-        if (markRead && !detail.IsRead && _suppressedReadFor != detail.Id)
-        {
-            _service.MarkRead(detail.Id, true);
-            ReaderIsRead = true;
-            LoadNavigation();
-        }
     }
 
     partial void OnSelectedNodeChanged(NavigationNode? value)

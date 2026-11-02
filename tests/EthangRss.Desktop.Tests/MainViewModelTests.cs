@@ -37,17 +37,41 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
-    public void Moving_onto_an_article_marks_that_article_read()
+    public void Moving_onto_an_article_does_not_change_its_read_state()
     {
         var (model, service) = Build();
 
         model.Run(ReaderCommand.NextArticle);
 
-        // The cursor is on the second article, so that is the one being read.
+        // Moving is navigation, not reading. Nothing is marked read until asked.
         Assert.Equal(2, model.SelectedArticle!.Id);
-        Assert.Contains(2, service.Read);
-        Assert.DoesNotContain(1, service.Read);
-        Assert.Equal(2, model.UnreadTotal);
+        Assert.Empty(service.Read);
+        Assert.Equal(3, model.UnreadTotal);
+    }
+
+    [Fact]
+    public void The_read_toggle_label_reflects_the_current_state()
+    {
+        var (model, _) = Build();
+        model.Run(ReaderCommand.NextArticle);
+
+        Assert.Equal("Mark read", model.ReadToggleLabel);
+
+        model.Run(ReaderCommand.ToggleRead);
+        Assert.Equal("Mark unread", model.ReadToggleLabel);
+    }
+
+    [Fact]
+    public void Marking_read_is_the_only_thing_that_changes_the_read_state()
+    {
+        var (model, service) = Build();
+
+        model.Run(ReaderCommand.NextArticle);
+        model.Run(ReaderCommand.NextArticle);
+        Assert.Empty(service.Read);
+
+        model.Run(ReaderCommand.ToggleRead);
+        Assert.Single(service.Read);
     }
 
     [Fact]
@@ -148,7 +172,10 @@ public sealed class MainViewModelTests
     {
         var (model, service) = Build();
         model.Run(ReaderCommand.NextArticle);
+
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
         Assert.Contains(2, service.Read);
+        Assert.True(model.ReaderIsRead);
 
         Assert.True(model.Run(ReaderCommand.ToggleRead));
         Assert.DoesNotContain(2, service.Read);
@@ -156,7 +183,7 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
-    public void Mark_all_read_is_reported_and_clears_the_folder()
+    public void Mark_all_read_is_still_an_explicit_bulk_action()
     {
         var (model, service) = Build();
         service.Read.Clear();

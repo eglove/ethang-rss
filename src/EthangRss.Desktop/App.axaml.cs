@@ -61,7 +61,7 @@ public partial class App : Application
 
     private static void ShowOnboardingIfNeeded(AppDatabase database, SettingsStore settings)
     {
-        var model = new OnboardingViewModel(settings, path => new Core.Import.SubscriptionImporter(database).Import(path));
+        var model = new OnboardingViewModel(settings);
         if (model.IsComplete)
         {
             return;

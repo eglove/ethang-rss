@@ -141,7 +141,8 @@
                         <Button Classes="ghost" Content="Open in browser"
                                 Click="OnOpenClick" />
                         <Button Classes="ghost" Content="Star (s)" Click="OnStarClick" />
-                        <Button Classes="ghost" Content="Mark unread (m)" Click="OnToggleReadClick" />
+                        <Button Classes="ghost" Content="{Binding ReadToggleLabel}"
+                                Click="OnToggleReadClick" />
                     </StackPanel>
                 </Border>
 
