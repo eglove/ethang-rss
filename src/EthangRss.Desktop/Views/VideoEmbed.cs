@@ -41,10 +41,14 @@ public static class VideoEmbed
                 AdapterPreference = [WebViewAdapterType.WebView2],
             };
 
-            // Only the missing referrer is supplied. The surface already carries a real browser
-            // origin from WebView2, and overriding Origin makes the provider reject the request.
-            view.WebResourceRequested += (_, eventArgs) =>
-                eventArgs.Request.Headers.TrySet("Referer", OriginatingPage.ToString());
+            // WebView2 supplies a real browser identity and origin, which moved the provider from
+            // refusing the client outright (error 153) to loading its player at all.
+            //
+            // Known limitation: the provider also checks the referring page, and this wrapper cannot
+            // supply one. Its resource filter is registered only when a handler subscribes before the
+            // adapter exists, and the adapter is created on attach, so WebResourceRequested is inert
+            // here. Until that is fixed upstream the player reports the video as unavailable, and the
+            // Watch on YouTube action inside it is the way out.
 
             view.Source = source;
             return new BuildAttempt(view, source, null);
