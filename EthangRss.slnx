@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EthangRss.Core/EthangRss.Core.csproj" />
+    <Project Path="src/EthangRss.Desktop/EthangRss.Desktop.csproj" />
+    <Project Path="src/EthangRss.Import/EthangRss.Import.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EthangRss.Core.Tests/EthangRss.Core.Tests.csproj" />
+  </Folder>
+</Solution>
