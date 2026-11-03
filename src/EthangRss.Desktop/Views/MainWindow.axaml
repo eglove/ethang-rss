@@ -78,7 +78,8 @@
                                     <Grid ColumnDefinitions="Auto,*,Auto">
                                         <TextBlock Grid.Column="0" Text="&#x26A0;"
                                                    Foreground="{StaticResource ErrorBrush}"
-                                                   IsVisible="{Binding HasError}" Margin="0,0,6,0" />
+                                                   IsVisible="{Binding HasError}" Margin="0,0,6,0"
+                                                   ToolTip.Tip="{Binding LastError}" />
                                         <TextBlock Grid.Column="1" Text="{Binding Title}"
                                                    FontSize="13" TextTrimming="CharacterEllipsis" />
                                         <Border Grid.Column="2" Classes="unread-dot"

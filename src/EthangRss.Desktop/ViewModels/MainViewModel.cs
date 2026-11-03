@@ -85,9 +85,6 @@ public sealed partial class MainViewModel : ViewModelBase
 
     partial void OnReaderIsReadChanged(bool value) => OnPropertyChanged(nameof(ReadToggleLabel));
 
-    /// <summary>Re-reads the current folder so a changed read state shows up in the list.</summary>
-    public void RefreshArticleList() => LoadArticles();
-
     public IReadOnlyList<(string Keys, string Description)> Shortcuts => KeyboardMap.CheatSheet;
 
     public event EventHandler<string>? OpenUrlRequested;
@@ -124,8 +121,15 @@ public sealed partial class MainViewModel : ViewModelBase
         }
     }
 
-    private void LoadArticles()
+    /// <summary>
+    /// Rebuilds the article list. A plain reload puts the cursor on the first row; a reload that
+    /// follows an explicit read keeps it instead, so the list does not jump back to the top.
+    /// </summary>
+    private void LoadArticles(bool keepSelection = false)
     {
+        var previous = keepSelection ? SelectedArticle : null;
+        var previousIndex = previous is null ? -1 : Articles.IndexOf(previous);
+
         _suppressSelection = true;
         try
         {
@@ -142,7 +146,17 @@ public sealed partial class MainViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(IsEmptyFolder));
-        ShowArticle(Articles.FirstOrDefault());
+
+        // The same article while it is still listed, otherwise the row that took its place (the next
+        // one down, or the one above when the old row was the last), and the top only when the list
+        // was not being kept at all.
+        var index = previous is null ? -1 : Articles.IndexOf(previous);
+        if (index < 0 && previousIndex >= 0 && Articles.Count > 0)
+        {
+            index = Math.Clamp(previousIndex, 0, Articles.Count - 1);
+        }
+
+        ShowArticle(index >= 0 ? Articles[index] : Articles.FirstOrDefault());
     }
 
     /// <summary>
@@ -344,8 +358,9 @@ public sealed partial class MainViewModel : ViewModelBase
         // Remember the explicit choice so re-selecting the row cannot silently reverse it.
         _suppressedReadFor = next ? null : SelectedArticle.Id;
 
-        // Only the counts change; reloading the list would re-select the article and undo this
-        // by marking it read again on selection.
+        // The list is rebuilt with the cursor held: in the unread folder the article just read is
+        // gone, so the row that took its place is selected rather than the top of the list.
+        LoadArticles(keepSelection: true);
         LoadNavigation();
         return true;
     }

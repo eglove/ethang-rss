@@ -174,6 +174,33 @@ public sealed class PollSchedulerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_feed_that_recovers_stops_showing_its_old_error()
+    {
+        var feedId = InsertFeed("https://flaky.example.com/feed", null);
+
+        using (var connection = _temp.Database.Open())
+        using (var command = connection.CreateCommand())
+        {
+            command.CommandText = "update feeds set LastError = $error, LastErrorAt = $at where Id = $id";
+            command.Parameters.AddWithValue("$error", "The feed responded with 500 Internal Server Error.");
+            command.Parameters.AddWithValue("$at", Now.AddMinutes(-5).ToString("O"));
+            command.Parameters.AddWithValue("$id", feedId);
+            command.ExecuteNonQuery();
+        }
+
+        await NewScheduler(new FakeFetcher()).RunOnceAsync(CancellationToken.None);
+
+        using var check = _temp.Database.Open();
+        using var read = check.CreateCommand();
+        read.CommandText = "select LastError, LastErrorAt from feeds where Id = $id";
+        read.Parameters.AddWithValue("$id", feedId);
+        using var row = read.ExecuteReader();
+        Assert.True(row.Read());
+        Assert.True(row.IsDBNull(0));
+        Assert.True(row.IsDBNull(1));
+    }
+
+    [Fact]
     public async Task Concurrency_never_exceeds_the_configured_limit()
     {
         for (var index = 0; index < 20; index++)

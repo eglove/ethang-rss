@@ -53,6 +53,9 @@ public sealed class MainViewModelTests
     public void The_read_toggle_label_reflects_the_current_state()
     {
         var (model, _) = Build();
+
+        // The all folder keeps a read article listed, so the cursor stays on it and the label flips.
+        model.SelectFolder(ArticleScopeVm.All);
         model.Run(ReaderCommand.NextArticle);
 
         Assert.Equal("Mark read", model.ReadToggleLabel);
@@ -171,6 +174,7 @@ public sealed class MainViewModelTests
     public void Toggling_read_changes_the_articles_state()
     {
         var (model, service) = Build();
+        model.SelectFolder(ArticleScopeVm.All);
         model.Run(ReaderCommand.NextArticle);
 
         Assert.True(model.Run(ReaderCommand.ToggleRead));
@@ -180,6 +184,63 @@ public sealed class MainViewModelTests
         Assert.True(model.Run(ReaderCommand.ToggleRead));
         Assert.DoesNotContain(2, service.Read);
         Assert.False(model.ReaderIsRead);
+    }
+
+    [Fact]
+    public void Marking_read_moves_to_the_next_article_instead_of_the_top_of_the_list()
+    {
+        var (model, service) = Build();
+        model.Run(ReaderCommand.NextArticle);
+
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
+
+        // The read article leaves the unread folder; the cursor must follow the list, not reset.
+        Assert.Contains(2, service.Read);
+        Assert.Equal(3, model.SelectedArticle!.Id);
+        Assert.Equal("Beta one", model.ReaderTitle);
+    }
+
+    [Fact]
+    public void Marking_the_last_article_read_lands_on_the_new_last_article()
+    {
+        var (model, _) = Build();
+        model.Run(ReaderCommand.LastArticle);
+
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
+
+        Assert.Equal(2, model.SelectedArticle!.Id);
+    }
+
+    [Fact]
+    public void Marking_read_keeps_the_article_in_place_in_the_all_folder()
+    {
+        var (model, service) = Build();
+        model.SelectFolder(ArticleScopeVm.All);
+        model.Run(ReaderCommand.NextArticle);
+
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
+
+        Assert.Contains(2, service.Read);
+        Assert.Equal(2, model.SelectedArticle!.Id);
+        Assert.Equal("Alpha two", model.ReaderTitle);
+    }
+
+    [Fact]
+    public void Marking_every_article_read_in_turn_empties_the_list_and_clears_the_reader()
+    {
+        var (model, service) = Build();
+
+        // Each read hands the cursor to the next row, so three presses clear the unread folder.
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
+        Assert.Equal(2, model.SelectedArticle!.Id);
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
+        Assert.Equal(3, model.SelectedArticle!.Id);
+        Assert.True(model.Run(ReaderCommand.ToggleRead));
+
+        Assert.Equal(3, service.Read.Count);
+        Assert.Empty(model.Articles);
+        Assert.Null(model.SelectedArticle);
+        Assert.False(model.HasReaderArticle);
     }
 
     [Fact]
