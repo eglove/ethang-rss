@@ -1,0 +1,18 @@
+# Severities for the whole repository. Builds treat warnings as errors
+# (Directory.Build.props), so anything left at its default severity is a build failure.
+
+root = true
+
+[*.cs]
+
+# async void event handlers are the Avalonia idiom here, and CrashLog.Install() already records
+# and swallows what they throw. Leaving this at its default would force four suppressions on
+# lines that are correct.
+dotnet_diagnostic.VSTHRD100.severity = none
+
+# The reader is single-threaded UI code. Blocking on a task from that thread deadlocks it, a
+# synchronous wait on an async method does the same, and an unobserved task loses its failure.
+# These are the mistakes that freeze the window rather than throw, so they fail the build.
+dotnet_diagnostic.VSTHRD002.severity = error
+dotnet_diagnostic.VSTHRD103.severity = error
+dotnet_diagnostic.VSTHRD110.severity = error
