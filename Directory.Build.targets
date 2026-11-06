@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    A test project with no VSTest adapter is not a failing test project. 'dotnet test' finds
+    zero tests in it, prints 'The following Tests are available:' followed by nothing, and
+    exits 0. The tests disappear from a green run with no signal at all.
+
+    This target turns that silence into a build error, so the failure mode is loud.
+  -->
+  <Target Name="VerifyTestAdapter"
+          BeforeTargets="VSTest"
+          Condition="'$(IsTestProject)' == 'true'">
+    <ItemGroup>
+      <_XunitAdapter Include="@(PackageReference)"
+                     Condition="'%(Identity)' == 'xunit.runner.visualstudio'" />
+    </ItemGroup>
+    <Error Condition="'@(_XunitAdapter)' == ''"
+           Text="Test project '$(MSBuildProjectName)' has no xunit.runner.visualstudio reference, so 'dotnet test' would discover zero tests and still exit 0. Add: &lt;PackageReference Include=&quot;xunit.runner.visualstudio&quot; Version=&quot;3.1.4&quot; /&gt;" />
+  </Target>
+
+</Project>
