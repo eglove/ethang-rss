@@ -105,15 +105,22 @@
                             <DataTemplate x:DataType="vm:ArticleRowVm">
                                 <StackPanel Spacing="3">
                                     <TextBlock Text="{Binding Title}" Classes="list-title" />
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <Border Classes="unread-dot"
+                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2,0,0">
+                                        <Border Grid.Column="0" Classes="unread-dot"
                                                 IsVisible="{Binding !IsRead}"
-                                                VerticalAlignment="Center" />
-                                        <TextBlock Classes="meta" Text="{Binding FeedTitle}" />
-                                        <TextBlock Classes="meta" Text="&#x2605;"
-                                                   Foreground="{StaticResource StarBrush}"
-                                                   IsVisible="{Binding IsStarred}" />
-                                    </StackPanel>
+                                                VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Classes="meta" Text="{Binding FeedTitle}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Classes="meta" Text="&#x2605;"
+                                                       Foreground="{StaticResource StarBrush}"
+                                                       IsVisible="{Binding IsStarred}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Classes="meta"
+                                                   Text="{Binding PublishedLabel}"
+                                                   IsVisible="{Binding HasPublishedLabel}"
+                                                   VerticalAlignment="Center" Margin="8,0,0,0" />
+                                    </Grid>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

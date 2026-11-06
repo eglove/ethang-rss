@@ -194,9 +194,10 @@ public sealed partial class MainViewModel : ViewModelBase
         }
 
         ReaderTitle = detail.Title;
-        ReaderMeta = detail.PublishedAt is null
+        var published = EthangRss.Core.Formatting.LocaleDate.Format(detail.PublishedAt);
+        ReaderMeta = published.Length == 0
             ? detail.FeedTitle
-            : detail.FeedTitle + "  |  " + detail.PublishedAt.Value.ToLocalTime().ToString("MMM d, yyyy h:mm tt");
+            : detail.FeedTitle + "  |  " + published;
         ReaderBody = detail.RawContent;
         ReaderLink = detail.Link;
         ReaderIsStarred = detail.IsStarred;

@@ -25,12 +25,25 @@
 
                 <StackPanel Spacing="6">
                     <TextBlock Classes="kicker" Text="ARTICLE HISTORY" />
-                    <CheckBox Content="Keep every article forever" IsChecked="{Binding KeepArticlesForever}" />
-                    <StackPanel Orientation="Horizontal" Spacing="10" IsEnabled="{Binding RetentionEnabled}">
-                        <TextBlock Text="Delete older than" VerticalAlignment="Center" FontSize="13" />
-                        <NumericUpDown Value="{Binding RetentionDays}" Minimum="1" Maximum="3650" Width="120" />
-                        <TextBlock Text="days (starred are kept)" VerticalAlignment="Center" FontSize="13" />
+
+                    <TextBlock Classes="meta" Text="Unread articles" Margin="0,4,0,0" />
+                    <CheckBox Content="Keep unread articles forever" IsChecked="{Binding KeepUnreadForever}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10" IsEnabled="{Binding UnreadRetentionEnabled}">
+                        <TextBlock Text="Delete unread older than" VerticalAlignment="Center" FontSize="13" />
+                        <NumericUpDown Value="{Binding UnreadRetentionDays}" Minimum="1" Maximum="3650" Width="120" />
+                        <TextBlock Text="days" VerticalAlignment="Center" FontSize="13" />
                     </StackPanel>
+
+                    <TextBlock Classes="meta" Text="Read articles" Margin="0,10,0,0" />
+                    <CheckBox Content="Keep read articles forever" IsChecked="{Binding KeepReadForever}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10" IsEnabled="{Binding ReadRetentionEnabled}">
+                        <TextBlock Text="Delete read older than" VerticalAlignment="Center" FontSize="13" />
+                        <NumericUpDown Value="{Binding ReadRetentionDays}" Minimum="1" Maximum="3650" Width="120" />
+                        <TextBlock Text="days" VerticalAlignment="Center" FontSize="13" />
+                    </StackPanel>
+
+                    <TextBlock Classes="meta" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Text="Starred articles are never deleted, whichever window applies." />
                     <Button Content="Clean up now" Classes="ghost" HorizontalAlignment="Left" Click="OnCleanupClick" />
                 </StackPanel>
 

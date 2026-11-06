@@ -25,7 +25,13 @@ public sealed record ArticleRowVm(
     bool IsRead,
     bool IsStarred,
     DateTimeOffset? PublishedAt,
-    string? Summary);
+    string? Summary)
+{
+    /// <summary>The timestamp as the machine's locale writes it, or empty when the feed had none.</summary>
+    public string PublishedLabel => EthangRss.Core.Formatting.LocaleDate.Format(PublishedAt);
+
+    public bool HasPublishedLabel => PublishedAt is not null;
+}
 
 public sealed record ArticleBodyVm(
     long Id,

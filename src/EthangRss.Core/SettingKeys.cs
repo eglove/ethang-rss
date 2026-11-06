@@ -4,8 +4,10 @@ namespace EthangRss.Core;
 public static class SettingKeys
 {
     public const string RefreshIntervalMinutes = "RefreshIntervalMinutes";
-    public const string KeepArticlesForever = "KeepArticlesForever";
-    public const string RetentionDays = "RetentionDays";
+    public const string KeepUnreadForever = "KeepUnreadForever";
+    public const string UnreadRetentionDays = "UnreadRetentionDays";
+    public const string KeepReadForever = "KeepReadForever";
+    public const string ReadRetentionDays = "ReadRetentionDays";
     public const string FilterYoutubeShorts = "FilterYoutubeShorts";
     public const string NotificationsEnabled = "NotificationsEnabled";
     public const string NotificationThreshold = "NotificationThreshold";
@@ -17,4 +19,8 @@ public static class SettingKeys
     public const string NavigationWidth = "NavigationWidth";
     public const string ListWidth = "ListWidth";
     public const string PageSize = "PageSize";
+
+    // The single window that predates the read/unread split. Read only, to seed the two new ones.
+    public const string KeepArticlesForever = "KeepArticlesForever";
+    public const string RetentionDays = "RetentionDays";
 }

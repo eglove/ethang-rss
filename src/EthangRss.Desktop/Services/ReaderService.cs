@@ -174,13 +174,13 @@ public sealed class ReaderService : IReaderService, IDisposable
 
     private void ApplyRetention()
     {
-        if (_settings.GetBool(SettingKeys.KeepArticlesForever, true))
+        var policy = Core.Retention.RetentionPolicy.Load(_settings);
+        if (policy.IsOff)
         {
             return;
         }
 
-        var days = _settings.GetInt(SettingKeys.RetentionDays, 90);
-        Core.Retention.ArticleRetention.Apply(_database, days, DateTimeOffset.UtcNow);
+        Core.Retention.ArticleRetention.Apply(_database, policy, DateTimeOffset.UtcNow);
     }
 
     public void Dispose()

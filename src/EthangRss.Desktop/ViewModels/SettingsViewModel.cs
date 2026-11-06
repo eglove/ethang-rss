@@ -21,9 +21,13 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _database = database;
         _clock = clock;
 
+        var retention = RetentionPolicy.Load(store);
+
         RefreshIntervalMinutes = store.GetInt(SettingKeys.RefreshIntervalMinutes, 30);
-        KeepArticlesForever = store.GetBool(SettingKeys.KeepArticlesForever, true);
-        RetentionDays = store.GetInt(SettingKeys.RetentionDays, 90);
+        KeepUnreadForever = retention.KeepsUnreadForever;
+        UnreadRetentionDays = retention.UnreadDays ?? RetentionPolicy.DefaultDays;
+        KeepReadForever = retention.KeepsReadForever;
+        ReadRetentionDays = retention.ReadDays ?? RetentionPolicy.DefaultDays;
         FilterYoutubeShorts = store.GetBool(SettingKeys.FilterYoutubeShorts, true);
         NotificationsEnabled = store.GetBool(SettingKeys.NotificationsEnabled, false);
         NotificationThreshold = store.GetInt(SettingKeys.NotificationThreshold, 1);
@@ -40,10 +44,16 @@ public sealed partial class SettingsViewModel : ViewModelBase
     public partial int RefreshIntervalMinutes { get; set; }
 
     [ObservableProperty]
-    public partial bool KeepArticlesForever { get; set; }
+    public partial bool KeepUnreadForever { get; set; }
 
     [ObservableProperty]
-    public partial int RetentionDays { get; set; }
+    public partial int UnreadRetentionDays { get; set; }
+
+    [ObservableProperty]
+    public partial bool KeepReadForever { get; set; }
+
+    [ObservableProperty]
+    public partial int ReadRetentionDays { get; set; }
 
     [ObservableProperty]
     public partial bool FilterYoutubeShorts { get; set; }
@@ -60,15 +70,23 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     public partial string StatusText { get; set; } = string.Empty;
 
-    public bool RetentionEnabled => !KeepArticlesForever;
+    public bool UnreadRetentionEnabled => !KeepUnreadForever;
 
-    partial void OnKeepArticlesForeverChanged(bool value) => OnPropertyChanged(nameof(RetentionEnabled));
+    public bool ReadRetentionEnabled => !KeepReadForever;
+
+    /// <summary>The policy the current inputs describe, with every window at least one day.</summary>
+    public RetentionPolicy Policy => new(
+        KeepUnreadForever ? null : Math.Max(1, UnreadRetentionDays),
+        KeepReadForever ? null : Math.Max(1, ReadRetentionDays));
+
+    partial void OnKeepUnreadForeverChanged(bool value) => OnPropertyChanged(nameof(UnreadRetentionEnabled));
+
+    partial void OnKeepReadForeverChanged(bool value) => OnPropertyChanged(nameof(ReadRetentionEnabled));
 
     public void Save()
     {
         _store.SetInt(SettingKeys.RefreshIntervalMinutes, Math.Max(1, RefreshIntervalMinutes));
-        _store.SetBool(SettingKeys.KeepArticlesForever, KeepArticlesForever);
-        _store.SetInt(SettingKeys.RetentionDays, Math.Max(1, RetentionDays));
+        Policy.Save(_store);
         _store.SetBool(SettingKeys.FilterYoutubeShorts, FilterYoutubeShorts);
         _store.SetBool(SettingKeys.NotificationsEnabled, NotificationsEnabled);
         _store.SetInt(SettingKeys.NotificationThreshold, Math.Max(1, NotificationThreshold));
@@ -79,13 +97,14 @@ public sealed partial class SettingsViewModel : ViewModelBase
     /// <summary>Applies cleanup now. Returns the number of articles removed.</summary>
     public int ApplyRetentionNow()
     {
-        if (KeepArticlesForever)
+        var policy = Policy;
+        if (policy.IsOff)
         {
-            StatusText = "Retention is off, so nothing was deleted.";
+            StatusText = "Both retention windows are off, so nothing was deleted.";
             return 0;
         }
 
-        var deleted = ArticleRetention.Apply(_database, Math.Max(1, RetentionDays), _clock());
+        var deleted = ArticleRetention.Apply(_database, policy, _clock());
         StatusText = deleted == 1 ? "Deleted 1 old article" : "Deleted " + deleted + " old articles";
         return deleted;
     }
