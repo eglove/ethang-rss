@@ -180,21 +180,47 @@ public sealed class ReaderQueries
         ("$value", isRead ? 1 : 0),
         ("$id", articleId));
 
-    /// <summary>Marks every unread article read, optionally limited to one feed. Returns the count.</summary>
-    public int MarkAllRead(long? feedId)
+    /// <summary>
+    /// Marks read every unread article the given view shows, where the view is the same one
+    /// <see cref="GetArticles"/> builds: a scope, an optional feed, and an optional search term.
+    /// Returns how many articles changed.
+    /// </summary>
+    public int MarkAllRead(ArticleScope scope, long? feedId, string? search)
     {
+        var searching = !string.IsNullOrWhiteSpace(search);
+        var sql = new StringBuilder("update articles set IsRead = 1 where IsRead = 0 ");
+
         using var connection = _database.Open();
         using var command = connection.CreateCommand();
-        command.CommandText = feedId is null
-            ? "update articles set IsRead = 1 where IsRead = 0"
-            : "update articles set IsRead = 1 where IsRead = 0 and FeedId = $feed";
+
+        if (scope == ArticleScope.Starred)
+        {
+            sql.Append("and IsStarred = 1 ");
+        }
 
         if (feedId is { } id)
         {
+            sql.Append("and FeedId = $feed ");
             command.Parameters.AddWithValue("$feed", id);
         }
 
-        return command.ExecuteNonQuery();
+        if (searching)
+        {
+            sql.Append("and Id in (select rowid from articles_fts where articles_fts match $search) ");
+            command.Parameters.AddWithValue("$search", ToFtsQuery(search!));
+        }
+
+        command.CommandText = sql.ToString();
+
+        try
+        {
+            return command.ExecuteNonQuery();
+        }
+        catch (SqliteException)
+        {
+            // A malformed FTS expression marks nothing rather than throwing, exactly as searching does.
+            return 0;
+        }
     }
 
     /// <summary>Flips the star and reports its new state.</summary>

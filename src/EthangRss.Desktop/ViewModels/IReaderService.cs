@@ -17,7 +17,8 @@ public interface IReaderService
 
     void MarkRead(long articleId, bool isRead);
 
-    int MarkAllRead(long? feedId);
+    /// <summary>Marks read every unread article the given view shows, and returns the count.</summary>
+    int MarkAllRead(ArticleScopeVm scope, long? feedId, string? search);
 
     bool ToggleStar(long articleId);
 

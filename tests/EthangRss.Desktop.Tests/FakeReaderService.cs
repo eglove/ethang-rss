@@ -22,6 +22,12 @@ public sealed class FakeReaderService : IReaderService
 
     public PollResultVm NextPoll { get; set; } = new(0, 0, 0, 0);
 
+    /// <summary>Set to make the next mark-read call fail the way a locked database does.</summary>
+    public Exception? MarkReadFailure { get; set; }
+
+    /// <summary>Set to make the next mark-all-read call fail the way a locked database does.</summary>
+    public Exception? MarkAllFailure { get; set; }
+
     public FakeReaderService AddArticle(long id, string title, long feedId = 1, string feedTitle = "A feed", bool isRead = false)
     {
         Articles[id] = new ArticleBodyVm(id, title, $"https://example.com/{id}", feedTitle, isRead, Starred.Contains(id),
@@ -84,6 +90,11 @@ public sealed class FakeReaderService : IReaderService
     public void MarkRead(long articleId, bool isRead)
     {
         Calls.Add("MarkRead:" + articleId + ":" + isRead);
+        if (MarkReadFailure is { } failure)
+        {
+            throw failure;
+        }
+
         if (isRead)
         {
             Read.Add(articleId);
@@ -94,9 +105,20 @@ public sealed class FakeReaderService : IReaderService
         }
     }
 
-    public int MarkAllRead(long? feedId)
+    public int MarkAllRead(ArticleScopeVm scope, long? feedId, string? search)
     {
-        var targets = Articles.Keys.Where(id => !Read.Contains(id)).ToList();
+        Calls.Add("MarkAllRead:" + scope + ":" + (feedId?.ToString() ?? "all") + ":" + (search ?? string.Empty));
+        if (MarkAllFailure is { } failure)
+        {
+            throw failure;
+        }
+
+        var targets = Articles.Keys
+            .Where(id => !Read.Contains(id))
+            .Where(id => scope != ArticleScopeVm.Starred || Starred.Contains(id))
+            .Where(id => feedId is not { } wanted || Articles[id].FeedTitle == Feeds[wanted].Title)
+            .Where(id => string.IsNullOrWhiteSpace(search) || Articles[id].Title.Contains(search, StringComparison.OrdinalIgnoreCase))
+            .ToList();
         foreach (var id in targets)
         {
             Read.Add(id);

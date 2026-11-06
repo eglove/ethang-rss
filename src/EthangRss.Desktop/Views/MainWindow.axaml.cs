@@ -13,6 +13,9 @@ public partial class MainWindow : Window
     private readonly ImageLoader _images = new();
     private EthangRss.Core.Subscriptions.FeedSubscriptions? _subscriptions;
 
+    /// <summary>The article the reader pane currently shows, so a redraw only happens for a new one.</summary>
+    private long? _renderedArticleId;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -32,9 +35,9 @@ public partial class MainWindow : Window
 
         model.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName is nameof(MainViewModel.ReaderBody))
+            if (args.PropertyName is nameof(MainViewModel.ReaderArticleId))
             {
-                RenderBody();
+                RenderBodyForCurrentArticle();
             }
         };
 
@@ -43,6 +46,23 @@ public partial class MainWindow : Window
         model.OpenUrlRequested += (_, url) => OpenUrl(url);
         model.FocusSearchRequested += (_, _) => this.FindControl<TextBox>("SearchBox")?.Focus();
 
+        RenderBodyForCurrentArticle();
+    }
+
+    /// <summary>
+    /// Rebuilds the pane only when the article actually changed. Marking an article read re-raises the
+    /// body with the same text, and rebuilding then destroys and recreates the native video surface
+    /// while it is still starting up - which surfaces as an unhandled abort and takes the app down.
+    /// </summary>
+    private void RenderBodyForCurrentArticle()
+    {
+        var articleId = Model?.SelectedArticle?.Id;
+        if (articleId == _renderedArticleId)
+        {
+            return;
+        }
+
+        _renderedArticleId = articleId;
         RenderBody();
     }
 
@@ -123,6 +143,9 @@ public partial class MainWindow : Window
 
     private void OnToggleReadClick(object? sender, RoutedEventArgs eventArgs) =>
         Model?.Run(ReaderCommand.ToggleRead);
+
+    private void OnMarkAllReadClick(object? sender, RoutedEventArgs eventArgs) =>
+        Model?.Run(ReaderCommand.MarkAllRead);
 
     private void OnShortcutsClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ShowShortcuts);
 

@@ -105,7 +105,16 @@ public sealed class ReaderService : IReaderService, IDisposable
 
     public void MarkRead(long articleId, bool isRead) => _queries.MarkRead(articleId, isRead);
 
-    public int MarkAllRead(long? feedId) => _queries.MarkAllRead(feedId);
+    public int MarkAllRead(ArticleScopeVm scope, long? feedId, string? search) =>
+        _queries.MarkAllRead(
+            scope switch
+            {
+                ArticleScopeVm.Starred => ArticleScope.Starred,
+                ArticleScopeVm.All => ArticleScope.All,
+                _ => ArticleScope.Unread,
+            },
+            feedId,
+            search);
 
     public bool ToggleStar(long articleId) => _queries.ToggleStar(articleId);
 

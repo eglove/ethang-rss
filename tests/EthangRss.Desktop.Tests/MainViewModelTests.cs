@@ -256,6 +256,75 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void Mark_all_read_marks_the_whole_current_view_and_says_how_many()
+    {
+        var (model, service) = Build();
+        model.SelectedNode = model.Feeds.Single(node => node.FeedId == 2);
+
+        Assert.True(model.Run(ReaderCommand.MarkAllRead));
+
+        // The current view is a feed, so the feed is what gets marked, and the status names it.
+        Assert.Contains(service.Calls, call => call.StartsWith("MarkAllRead:Unread:2:", StringComparison.Ordinal));
+        Assert.Contains("Marked 1 read in Beta feed", model.StatusText);
+        Assert.Empty(model.Articles);
+    }
+
+    [Fact]
+    public void Mark_all_read_in_a_folder_marks_the_whole_folder()
+    {
+        var (model, service) = Build();
+
+        Assert.True(model.Run(ReaderCommand.MarkAllRead));
+
+        Assert.Contains(service.Calls, call => call.StartsWith("MarkAllRead:Unread:all:", StringComparison.Ordinal));
+        Assert.Contains("Marked 3 read in Unread", model.StatusText);
+    }
+
+    [Fact]
+    public void Mark_all_read_inside_a_search_marks_only_what_the_search_found()
+    {
+        var (model, service) = Build();
+        model.SearchText = "Beta";
+
+        Assert.True(model.Run(ReaderCommand.MarkAllRead));
+
+        Assert.Contains(service.Calls, call => call.StartsWith("MarkAllRead:Unread:all:Beta", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Mark_all_read_in_an_already_read_view_reports_nothing_to_do()
+    {
+        var (model, service) = Build();
+        service.Read.UnionWith([1, 2, 3]);
+        model.Load();
+
+        Assert.False(model.Run(ReaderCommand.MarkAllRead));
+        Assert.Equal("Ready", model.StatusText);
+    }
+
+    [Fact]
+    public void A_failed_write_is_reported_instead_of_taking_the_app_down()
+    {
+        var (model, service) = Build();
+        service.MarkReadFailure = new IOException("database is locked");
+
+        // Rapid clicking can collide with the poller's write; that must cost a status line, not the process.
+        Assert.False(model.Run(ReaderCommand.ToggleRead));
+        Assert.Contains("database is locked", model.StatusText);
+        Assert.Equal("Alpha one", model.ReaderTitle);
+    }
+
+    [Fact]
+    public void A_failed_mark_all_is_reported_instead_of_taking_the_app_down()
+    {
+        var (model, service) = Build();
+        service.MarkAllFailure = new IOException("database is locked");
+
+        Assert.False(model.Run(ReaderCommand.MarkAllRead));
+        Assert.Contains("database is locked", model.StatusText);
+    }
+
+    [Fact]
     public void Open_in_browser_raises_the_request_with_the_article_link()
     {
         var (model, _) = Build();

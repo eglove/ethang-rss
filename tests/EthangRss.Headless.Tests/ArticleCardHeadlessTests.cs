@@ -30,7 +30,7 @@ public sealed class ArticleCardHeadlessTests
 
         public void MarkRead(long articleId, bool isRead) { }
 
-        public int MarkAllRead(long? feedId) => 0;
+        public int MarkAllRead(ArticleScopeVm scope, long? feedId, string? search) => 0;
 
         public bool ToggleStar(long articleId) => false;
 

@@ -168,10 +168,71 @@ public sealed class ReaderQueriesTests : IDisposable
     [Fact]
     public void Mark_all_read_in_a_feed_leaves_other_feeds_alone()
     {
-        var affected = _queries.MarkAllRead(_alpha);
+        var affected = _queries.MarkAllRead(ArticleScope.Unread, _alpha, null);
 
         Assert.Equal(2, affected);
         Assert.Equal(0, _queries.GetFeeds().Single(feed => feed.Id == _alpha).UnreadCount);
+    }
+
+    [Fact]
+    public void Mark_all_read_in_the_unread_folder_marks_every_unread_article()
+    {
+        var affected = _queries.MarkAllRead(ArticleScope.Unread, null, null);
+
+        Assert.Equal(5, affected);
+        Assert.Equal(0, _queries.GetFolderCounts().Unread);
+    }
+
+    [Fact]
+    public void Mark_all_read_in_the_all_folder_leaves_nothing_unread()
+    {
+        Execute("update articles set IsRead = 1 where Guid = 'a1'");
+
+        var affected = _queries.MarkAllRead(ArticleScope.All, null, null);
+
+        Assert.Equal(4, affected);
+        Assert.Equal(0, _queries.GetFolderCounts().Unread);
+    }
+
+    [Fact]
+    public void Mark_all_read_in_the_starred_folder_leaves_unstarred_articles_alone()
+    {
+        Execute("update articles set IsStarred = 1 where Guid in ('a1', 'b1')");
+
+        var affected = _queries.MarkAllRead(ArticleScope.Starred, null, null);
+
+        Assert.Equal(2, affected);
+        Assert.Equal(3, _queries.GetFolderCounts().Unread);
+    }
+
+    [Fact]
+    public void Mark_all_read_inside_a_search_marks_only_the_hits()
+    {
+        var affected = _queries.MarkAllRead(ArticleScope.Unread, null, "Gamma");
+
+        Assert.Equal(1, affected);
+        Assert.Equal(4, _queries.GetFolderCounts().Unread);
+    }
+
+    [Fact]
+    public void Mark_all_read_in_a_search_does_not_mark_a_read_article_again()
+    {
+        Execute("update articles set IsRead = 1 where Guid = 'g1'");
+
+        var affected = _queries.MarkAllRead(ArticleScope.All, null, "Gamma");
+
+        Assert.Equal(0, affected);
+    }
+
+    [Fact]
+    public void Mark_all_read_leaves_read_articles_read_rather_than_unreading_them()
+    {
+        Execute("update articles set IsRead = 1 where Guid = 'a1'");
+
+        _queries.MarkAllRead(ArticleScope.All, null, null);
+
+        Assert.Equal(0, _queries.GetFolderCounts().Unread);
+        Assert.Equal(5, _queries.GetFolderCounts().All);
     }
 
     [Fact]

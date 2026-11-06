@@ -9,6 +9,9 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // Installed before anything can fail, so a fault during startup is written down too.
+        CrashLog.Install();
+
         // One poller per user session: a second launch would fight the first over the database.
         using var single = new SingleInstance();
         if (!single.TryClaim())

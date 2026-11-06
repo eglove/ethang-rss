@@ -76,6 +76,13 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial int UnreadTotal { get; set; }
 
+    /// <summary>
+    /// The article the reader pane is showing. It changes only when a different article is shown, so
+    /// the view can tell a redraw from a re-raise of the same body.
+    /// </summary>
+    [ObservableProperty]
+    public partial long? ReaderArticleId { get; set; }
+
     public bool IsEmptyFolder => Articles.Count == 0;
 
     public bool HasReaderArticle => !string.IsNullOrEmpty(ReaderTitle);
@@ -183,6 +190,7 @@ public sealed partial class MainViewModel : ViewModelBase
             ReaderLink = null;
             ReaderIsStarred = false;
             ReaderIsRead = false;
+            ReaderArticleId = null;
             OnPropertyChanged(nameof(HasReaderArticle));
             return;
         }
@@ -202,6 +210,7 @@ public sealed partial class MainViewModel : ViewModelBase
         ReaderLink = detail.Link;
         ReaderIsStarred = detail.IsStarred;
         ReaderIsRead = detail.IsRead;
+        ReaderArticleId = detail.Id;
         OnPropertyChanged(nameof(HasReaderArticle));
 
     }
@@ -338,7 +347,16 @@ public sealed partial class MainViewModel : ViewModelBase
             return false;
         }
 
-        ReaderIsStarred = _service.ToggleStar(SelectedArticle.Id);
+        try
+        {
+            ReaderIsStarred = _service.ToggleStar(SelectedArticle.Id);
+        }
+        catch (Exception exception)
+        {
+            StatusText = Describe("star", exception);
+            return false;
+        }
+
         LoadNavigation();
         return true;
     }
@@ -353,7 +371,18 @@ public sealed partial class MainViewModel : ViewModelBase
         // The row in the list is a snapshot; the row that counts is the stored one.
         var current = _service.GetArticle(SelectedArticle.Id)?.IsRead ?? SelectedArticle.IsRead;
         var next = !current;
-        _service.MarkRead(SelectedArticle.Id, next);
+
+        try
+        {
+            _service.MarkRead(SelectedArticle.Id, next);
+        }
+        catch (Exception exception)
+        {
+            // A write that loses to the poller must cost a status line, not the process.
+            StatusText = Describe("update", exception);
+            return false;
+        }
+
         ReaderIsRead = next;
 
         // Remember the explicit choice so re-selecting the row cannot silently reverse it.
@@ -366,18 +395,37 @@ public sealed partial class MainViewModel : ViewModelBase
         return true;
     }
 
+    /// <summary>
+    /// Marks read everything the current view shows: the selected folder or feed, narrowed by the
+    /// search term when one is active. The count comes back from storage, not from the visible rows.
+    /// </summary>
     private bool MarkAllRead()
     {
-        var affected = _service.MarkAllRead(SelectedNode?.FeedId);
+        var view = SelectedNode;
+        int affected;
+
+        try
+        {
+            affected = _service.MarkAllRead(view?.Scope ?? ArticleScopeVm.Unread, view?.FeedId, SearchText);
+        }
+        catch (Exception exception)
+        {
+            StatusText = Describe("mark all read", exception);
+            return false;
+        }
+
         if (affected == 0)
         {
             return false;
         }
 
-        StatusText = "Marked " + affected + " read";
+        StatusText = "Marked " + affected + " read in " + (view?.Title ?? "this view");
         Load();
         return true;
     }
+
+    private static string Describe(string what, Exception exception) =>
+        "Could not " + what + ": " + exception.Message;
 
     [RelayCommand]
     public async Task RefreshAsync(CancellationToken cancellationToken)

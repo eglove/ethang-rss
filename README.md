@@ -12,7 +12,8 @@ and no account. Everything runs on your machine; the app talks to the network on
 - Plays video articles inline, including YouTube, instead of showing a headline with no body.
 
 Reading is explicit: moving through the list never changes what you have read. Marking read happens
-only when you press `m`, click Mark read, or press `Shift+A` to clear a whole folder.
+only when you press `m`, click Mark read, or press `Shift+A` to clear the whole view you are looking
+at - a folder, a single feed, or the results of a search.
 
 ## Requirements
 
@@ -50,6 +51,9 @@ fetched and parsed, so a typo never leaves a broken row behind.
 Images the reader caches are under `%LOCALAPPDATA%\EthangRss\images`. Delete the whole folder to start
 clean. Settings has an Open database folder button so you never have to type that path.
 
+If anything goes wrong, the app writes the details to `%LOCALAPPDATA%\EthangRss\crash.log` and keeps
+running rather than closing.
+
 ## Keyboard
 
 | Key | Action |
@@ -60,7 +64,7 @@ clean. Settings has an Open database folder button so you never have to type tha
 | `Enter` or `o` | open the article in your browser |
 | `s` | star or unstar |
 | `m` | mark read or unread |
-| `Shift+A` | mark everything in the current folder read |
+| `Shift+A` | mark everything in the current view read (folder, feed, or search) |
 | `u` | jump to Unread |
 | `b` | jump to Starred |
 | `/` | focus search |
