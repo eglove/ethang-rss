@@ -427,6 +427,61 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void Unsubscribing_asks_before_it_removes_and_names_what_would_go()
+    {
+        var (model, service) = Build();
+        model.SelectedNode = model.Feeds.Single(node => node.FeedId == 2);
+
+        var prompt = model.RequestUnsubscribe();
+
+        Assert.NotNull(prompt);
+        Assert.Equal("Beta feed", prompt!.FeedTitle);
+        Assert.Equal(1, prompt.ArticleCount);
+
+        // Asking is not removing: nothing has changed yet.
+        Assert.Contains(2, service.Feeds.Keys);
+        Assert.Contains(model.Feeds, node => node.FeedId == 2);
+    }
+
+    [Fact]
+    public void Unsubscribing_removes_the_feed_its_articles_and_the_selection()
+    {
+        var (model, service) = Build();
+        model.SelectedNode = model.Feeds.Single(node => node.FeedId == 2);
+
+        Assert.True(model.UnsubscribeFeed(2));
+
+        Assert.DoesNotContain(2, service.Feeds.Keys);
+        Assert.DoesNotContain(model.Feeds, node => node.FeedId == 2);
+        Assert.NotNull(model.SelectedNode);
+        Assert.True(model.SelectedNode!.IsFolder);
+        Assert.Contains("Beta feed", model.StatusText);
+        Assert.DoesNotContain(model.Articles, row => row.Id == 3);
+    }
+
+    [Fact]
+    public void A_folder_is_not_a_subscription_so_there_is_nothing_to_ask_about()
+    {
+        var (model, _) = Build();
+
+        Assert.True(model.SelectedNode!.IsFolder);
+        Assert.Null(model.RequestUnsubscribe());
+    }
+
+    [Fact]
+    public void A_failed_unsubscribe_costs_a_status_line_not_the_process()
+    {
+        var (model, service) = Build();
+        model.SelectedNode = model.Feeds.Single(node => node.FeedId == 2);
+        service.UnsubscribeFailure = new InvalidOperationException("database is locked");
+
+        Assert.False(model.UnsubscribeFeed(2));
+
+        Assert.Contains("Could not unsubscribe", model.StatusText);
+        Assert.Contains(2, service.Feeds.Keys);
+    }
+
+    [Fact]
     public void Selecting_an_article_that_does_not_exist_leaves_the_reader_blank()
     {
         var (model, _) = Build();

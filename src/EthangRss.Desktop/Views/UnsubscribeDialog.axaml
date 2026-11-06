@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="EthangRss.Desktop.Views.UnsubscribeDialog"
+        Title="Unsubscribe"
+        Width="480" Height="230"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="{StaticResource SurfaceBrush}">
+
+    <Grid Margin="22" RowDefinitions="Auto,Auto,*,Auto">
+        <TextBlock Grid.Row="0" Classes="h1" Name="HeadlineText" Margin="0,0,0,6" />
+        <TextBlock Grid.Row="1" Classes="meta" Name="DetailText" TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Name="KeepButton" Content="Keep feed" Classes="ghost" Click="OnKeep" />
+            <Button Name="UnsubscribeButton" Content="Unsubscribe" Click="OnUnsubscribe" Padding="16,7" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -108,6 +108,7 @@ public partial class MainWindow : Window
             Key.Oem2 => eventArgs.KeyModifiers.HasFlag(KeyModifiers.Shift) ? "?" : "/",
             Key.Escape => "Escape",
             Key.Enter => "Enter",
+            Key.Delete => "Delete",
             Key.Home => "Home",
             Key.End => "End",
             _ => null,
@@ -124,10 +125,20 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Let the search box keep typing characters it owns.
-        if (!model.IsSearchFocused && command is ReaderCommand.Refresh or ReaderCommand.ToggleStar or ReaderCommand.ToggleRead
+        // Let the search box keep typing characters it owns. Delete is in this list because it is
+        // how a person edits their search text, and unsubscribing from a feed is not an edit.
+        if (!model.IsSearchFocused
+            && command is ReaderCommand.Refresh or ReaderCommand.ToggleStar or ReaderCommand.ToggleRead or ReaderCommand.UnsubscribeFeed
             && this.FindControl<TextBox>("SearchBox")?.IsFocused == true)
         {
+            return;
+        }
+
+        // Unsubscribing asks a question, so it cannot be answered inside the key handler.
+        if (command == ReaderCommand.UnsubscribeFeed)
+        {
+            eventArgs.Handled = true;
+            _ = UnsubscribeAsync();
             return;
         }
 
@@ -136,6 +147,33 @@ public partial class MainWindow : Window
             eventArgs.Handled = true;
         }
     }
+
+    /// <summary>
+    /// Asks, then removes. Shown modally so a feed cannot vanish behind a window nobody read, and
+    /// awaited rather than blocked on, because waiting on the UI thread for a dialog would deadlock
+    /// the very thread that has to draw it.
+    /// </summary>
+    private async Task UnsubscribeAsync()
+    {
+        if (Model is not { } model || model.RequestUnsubscribe() is not { } prompt)
+        {
+            return;
+        }
+
+        var dialog = new UnsubscribeDialog(prompt.FeedTitle, prompt.ArticleCount);
+        await dialog.ShowDialog(this);
+
+        if (dialog.IsConfirmed)
+        {
+            model.UnsubscribeFeed(prompt.FeedId);
+        }
+        else
+        {
+            model.StatusText = "Nothing was removed";
+        }
+    }
+
+    private async void OnUnsubscribeClick(object? sender, RoutedEventArgs eventArgs) => await UnsubscribeAsync();
 
     private void OnOpenClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.OpenInBrowser);
 

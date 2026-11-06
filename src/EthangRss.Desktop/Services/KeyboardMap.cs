@@ -20,6 +20,7 @@ public enum ReaderCommand
     GoToUnread,
     GoToAll,
     GoToStarred,
+    UnsubscribeFeed,
 }
 
 /// <summary>Maps a key press to a command. Text entry wins: while the search box has focus,
@@ -58,6 +59,7 @@ public static class KeyboardMap
             "u" => ReaderCommand.GoToUnread,
             "b" => ReaderCommand.GoToStarred,
             "A" => ReaderCommand.MarkAllRead,
+            "Delete" => ReaderCommand.UnsubscribeFeed,
             "Home" => ReaderCommand.FirstArticle,
             "End" => ReaderCommand.LastArticle,
             _ => ReaderCommand.None,
@@ -79,6 +81,7 @@ public static class KeyboardMap
         ("b", "jump to starred"),
         ("/", "focus search"),
         ("Esc", "clear search"),
+        ("Delete", "unsubscribe from the selected feed"),
         ("r", "refresh feeds now"),
         ("?", "show this list"),
     ];

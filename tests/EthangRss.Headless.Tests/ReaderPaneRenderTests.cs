@@ -55,6 +55,8 @@ public sealed class ReaderPaneRenderTests
 
         public void DeleteFeed(long feedId) { }
 
+        public int UnsubscribeFeed(long feedId) => 0;
+
         public Task<PollResultVm> RefreshAsync(CancellationToken cancellationToken) =>
             Task.FromResult(new PollResultVm(0, 0, 0, 0));
     }

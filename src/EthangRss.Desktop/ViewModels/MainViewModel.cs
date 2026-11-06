@@ -37,6 +37,19 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial NavigationNode? SelectedNode { get; set; }
 
+    /// <summary>
+    /// The folder list's own selection. The two lists cannot share one SelectedItem binding: a list
+    /// whose item is not in its own collection clears the shared value, so selecting a feed used to
+    /// be undone by the folder list and the other way round. Each list keeps its own, and
+    /// SelectedNode stays the one thing the rest of the reader reads.
+    /// </summary>
+    [ObservableProperty]
+    public partial NavigationNode? SelectedFolder { get; set; }
+
+    /// <summary>The feed list's own selection, kept in step with SelectedNode.</summary>
+    [ObservableProperty]
+    public partial NavigationNode? SelectedFeed { get; set; }
+
     [ObservableProperty]
     public partial ArticleRowVm? SelectedArticle { get; set; }
 
@@ -86,6 +99,9 @@ public sealed partial class MainViewModel : ViewModelBase
     public bool IsEmptyFolder => Articles.Count == 0;
 
     public bool HasReaderArticle => !string.IsNullOrEmpty(ReaderTitle);
+
+    /// <summary>True while a feed rather than a folder is selected, which is when unsubscribing applies.</summary>
+    public bool HasSelectedFeed => SelectedNode?.FeedId is not null;
 
     /// <summary>The explicit read toggle's label, which follows the article's actual state.</summary>
     public string ReadToggleLabel => ReaderIsRead ? "Mark unread" : "Mark read";
@@ -217,9 +233,32 @@ public sealed partial class MainViewModel : ViewModelBase
 
     partial void OnSelectedNodeChanged(NavigationNode? value)
     {
+        OnPropertyChanged(nameof(HasSelectedFeed));
+
+        // Each list shows only the selection that belongs to it. An unchanged value is a no-op, so
+        // this cannot bounce between the two.
+        SelectedFolder = value is { IsFolder: true } ? value : null;
+        SelectedFeed = value is { IsFolder: false } ? value : null;
+
         if (value is not null)
         {
             LoadArticles();
+        }
+    }
+
+    partial void OnSelectedFolderChanged(NavigationNode? value)
+    {
+        if (value is not null)
+        {
+            SelectedNode = value;
+        }
+    }
+
+    partial void OnSelectedFeedChanged(NavigationNode? value)
+    {
+        if (value is not null)
+        {
+            SelectedNode = value;
         }
     }
 
@@ -420,6 +459,58 @@ public sealed partial class MainViewModel : ViewModelBase
         }
 
         StatusText = "Marked " + affected + " read in " + (view?.Title ?? "this view");
+        Load();
+        return true;
+    }
+
+    /// <summary>
+    /// What unsubscribing would remove from the view in front of the person, or null when that view
+    /// is a folder - a folder is not a subscription, so there is nothing to stop following. Asking
+    /// and removing are separate calls because the question is the window's to ask.
+    /// </summary>
+    public UnsubscribePrompt? RequestUnsubscribe()
+    {
+        if (SelectedNode is not { FeedId: { } feedId } node)
+        {
+            return null;
+        }
+
+        var articleCount = _service.GetFeeds().FirstOrDefault(feed => feed.Id == feedId)?.ArticleCount ?? 0;
+        return new UnsubscribePrompt(feedId, node.Title, articleCount);
+    }
+
+    /// <summary>
+    /// Stops following a feed and takes its articles with it, rather than leaving them behind with no
+    /// feed to belong to. The selection moves to a folder first, because the feed it pointed at is
+    /// about to stop existing.
+    /// </summary>
+    public bool UnsubscribeFeed(long feedId)
+    {
+        var title = SelectedNode?.FeedId == feedId
+            ? SelectedNode.Title
+            : _service.GetFeeds().FirstOrDefault(feed => feed.Id == feedId)?.Title ?? "that feed";
+
+        int removed;
+        try
+        {
+            removed = _service.UnsubscribeFeed(feedId);
+        }
+        catch (Exception exception)
+        {
+            // A locked database costs a status line, not the subscription and not the process.
+            StatusText = Describe("unsubscribe", exception);
+            return false;
+        }
+
+        // The feed is no longer in the list, so the selection has to move before the list is rebuilt.
+        SelectedNode = Folders[0];
+        StatusText = removed switch
+        {
+            0 => "Unsubscribed from " + title,
+            1 => "Unsubscribed from " + title + ", removed 1 article",
+            _ => "Unsubscribed from " + title + ", removed " + removed + " articles",
+        };
+
         Load();
         return true;
     }

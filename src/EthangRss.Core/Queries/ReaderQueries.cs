@@ -239,6 +239,37 @@ public sealed class ReaderQueries
         "delete from feeds where Id = $id",
         ("$id", feedId));
 
+    /// <summary>
+    /// Removes a feed and, through the cascade on articles, everything it brought in. The count
+    /// that comes back is the number of articles that went with it, so the caller can say what it
+    /// did rather than guess.
+    /// </summary>
+    public int UnsubscribeFeed(long feedId)
+    {
+        using var connection = _database.Open();
+        using var transaction = connection.BeginTransaction();
+
+        using var count = connection.CreateCommand();
+        count.Transaction = transaction;
+        count.CommandText = "select count(*) from articles where FeedId = $id";
+        count.Parameters.AddWithValue("$id", feedId);
+        var articles = Convert.ToInt32(count.ExecuteScalar());
+
+        using var delete = connection.CreateCommand();
+        delete.Transaction = transaction;
+        delete.CommandText = "delete from feeds where Id = $id";
+        delete.Parameters.AddWithValue("$id", feedId);
+
+        if (delete.ExecuteNonQuery() == 0)
+        {
+            transaction.Rollback();
+            return 0;
+        }
+
+        transaction.Commit();
+        return articles;
+    }
+
     private int ExecuteCount(string sql, params (string Name, object Value)[] parameters)
     {
         using var connection = _database.Open();

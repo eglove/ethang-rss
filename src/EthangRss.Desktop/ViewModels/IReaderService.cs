@@ -24,5 +24,8 @@ public interface IReaderService
 
     void DeleteFeed(long feedId);
 
+    /// <summary>Removes a feed and its articles, and reports how many articles went with it.</summary>
+    int UnsubscribeFeed(long feedId);
+
     Task<PollResultVm> RefreshAsync(CancellationToken cancellationToken);
 }

@@ -125,6 +125,8 @@ public sealed class ReaderService : IReaderService, IDisposable
 
     public void DeleteFeed(long feedId) => _queries.DeleteFeed(feedId);
 
+    public int UnsubscribeFeed(long feedId) => _queries.UnsubscribeFeed(feedId);
+
     public async Task<PollResultVm> RefreshAsync(CancellationToken cancellationToken)
     {
         var summary = await _scheduler.RefreshNowAsync(cancellationToken).ConfigureAwait(false);

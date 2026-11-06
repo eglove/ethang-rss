@@ -57,7 +57,7 @@
                         <TextBlock Classes="kicker" Text="FOLDERS" Margin="8,4,0,6" />
 
                         <ListBox Classes="nav" ItemsSource="{Binding Folders}"
-                                 SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                                 SelectedItem="{Binding SelectedFolder, Mode=TwoWay}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:NavigationNode">
                                     <Grid ColumnDefinitions="*,Auto">
@@ -72,7 +72,7 @@
                         <TextBlock Classes="kicker" Text="FEEDS" Margin="8,16,0,6" />
 
                         <ListBox Classes="nav" ItemsSource="{Binding Feeds}"
-                                 SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                                 SelectedItem="{Binding SelectedFeed, Mode=TwoWay}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:NavigationNode">
                                     <Grid ColumnDefinitions="Auto,*,Auto">
@@ -95,10 +95,15 @@
             <!-- Article list -->
             <Border Grid.Column="1" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
                 <Grid RowDefinitions="Auto,*">
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="14,12,10,8">
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" Margin="14,12,10,8">
                         <TextBlock Grid.Column="0" Classes="kicker"
                                    Text="{Binding SelectedNode.Title}" VerticalAlignment="Center" />
-                        <Button Grid.Column="1" Classes="ghost" Content="Mark all read"
+                        <Button Grid.Column="1" Classes="ghost" Content="Unsubscribe"
+                                Click="OnUnsubscribeClick"
+                                IsVisible="{Binding HasSelectedFeed}"
+                                FontSize="11" Padding="8,3"
+                                ToolTip.Tip="Stop following this feed and delete its articles (Delete)" />
+                        <Button Grid.Column="2" Classes="ghost" Content="Mark all read"
                                 Click="OnMarkAllReadClick" FontSize="11" Padding="8,3"
                                 ToolTip.Tip="Mark everything in this view read (Shift+A)" />
                     </Grid>

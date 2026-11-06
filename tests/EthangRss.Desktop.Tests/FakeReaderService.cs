@@ -28,6 +28,11 @@ public sealed class FakeReaderService : IReaderService
     /// <summary>Set to make the next mark-all-read call fail the way a locked database does.</summary>
     public Exception? MarkAllFailure { get; set; }
 
+    /// <summary>Set to make the next unsubscribe call fail the way a locked database does.</summary>
+    public Exception? UnsubscribeFailure { get; set; }
+
+    public List<long> Unsubscribed { get; } = [];
+
     public FakeReaderService AddArticle(long id, string title, long feedId = 1, string feedTitle = "A feed", bool isRead = false)
     {
         Articles[id] = new ArticleBodyVm(id, title, $"https://example.com/{id}", feedTitle, isRead, Starred.Contains(id),
@@ -43,8 +48,17 @@ public sealed class FakeReaderService : IReaderService
 
     public IReadOnlyList<FeedSummaryVm> GetFeeds() =>
         Feeds.Values
-            .Select(feed => feed with { UnreadCount = Articles.Values.Count(article => article.Id > 0 && !Read.Contains(article.Id)) })
+            .Select(feed => feed with
+            {
+                UnreadCount = ArticlesFor(feed.Id).Count(article => !Read.Contains(article.Id)),
+                ArticleCount = ArticlesFor(feed.Id).Count(),
+            })
             .ToList();
+
+    private IEnumerable<ArticleBodyVm> ArticlesFor(long feedId) =>
+        Feeds.TryGetValue(feedId, out var feed)
+            ? Articles.Values.Where(article => article.FeedTitle == feed.Title)
+            : [];
 
     public FolderCountsVm GetFolderCounts() =>
         new(
@@ -140,6 +154,34 @@ public sealed class FakeReaderService : IReaderService
     }
 
     public void DeleteFeed(long feedId) => Feeds.Remove(feedId);
+
+    public int UnsubscribeFeed(long feedId)
+    {
+        Calls.Add("UnsubscribeFeed:" + feedId);
+        if (UnsubscribeFailure is { } failure)
+        {
+            throw failure;
+        }
+
+        if (!Feeds.TryGetValue(feedId, out var feed))
+        {
+            return 0;
+        }
+
+        var removed = Articles
+            .Where(pair => pair.Value.FeedTitle == feed.Title)
+            .Select(pair => pair.Key)
+            .ToList();
+
+        foreach (var id in removed)
+        {
+            Articles.Remove(id);
+        }
+
+        Feeds.Remove(feedId);
+        Unsubscribed.Add(feedId);
+        return removed.Count;
+    }
 
     public Task<PollResultVm> RefreshAsync(CancellationToken cancellationToken)
     {

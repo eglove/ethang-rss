@@ -44,3 +44,26 @@ public sealed record ArticleBodyVm(
     string RawContent);
 
 public sealed record PollResultVm(int Polled, int Succeeded, int Failed, int NewArticles);
+
+/// <summary>
+/// The question asked before a feed is thrown away. The view model raises it and then reads the
+/// answer, so the decision lives in the window while the consequence stays testable without one.
+/// </summary>
+public sealed class UnsubscribePrompt
+{
+    public UnsubscribePrompt(long feedId, string feedTitle, int articleCount)
+    {
+        FeedId = feedId;
+        FeedTitle = feedTitle;
+        ArticleCount = articleCount;
+    }
+
+    public long FeedId { get; }
+
+    public string FeedTitle { get; }
+
+    public int ArticleCount { get; }
+
+    /// <summary>Set by whoever asked the question. Left false, nothing is removed.</summary>
+    public bool IsConfirmed { get; set; }
+}

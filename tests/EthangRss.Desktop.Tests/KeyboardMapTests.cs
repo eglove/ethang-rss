@@ -19,6 +19,7 @@ public sealed class KeyboardMapTests
     [InlineData("Home", ReaderCommand.FirstArticle)]
     [InlineData("End", ReaderCommand.LastArticle)]
     [InlineData("A", ReaderCommand.MarkAllRead)]
+    [InlineData("Delete", ReaderCommand.UnsubscribeFeed)]
     [InlineData("x", ReaderCommand.None)]
     public void Maps_keys_to_commands(string key, ReaderCommand expected)
     {
@@ -46,5 +47,6 @@ public sealed class KeyboardMapTests
         Assert.Contains(KeyboardMap.CheatSheet, entry => entry.Keys == "j");
         Assert.Contains(KeyboardMap.CheatSheet, entry => entry.Keys == "?");
         Assert.Contains(KeyboardMap.CheatSheet, entry => entry.Keys.Contains("Shift+A", StringComparison.Ordinal));
+        Assert.Contains(KeyboardMap.CheatSheet, entry => entry.Keys == "Delete");
     }
 }

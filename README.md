@@ -15,6 +15,11 @@ Reading is explicit: moving through the list never changes what you have read. M
 only when you press `m`, click Mark read, or press `Shift+A` to clear the whole view you are looking
 at - a folder, a single feed, or the results of a search.
 
+Unsubscribing is explicit too. Select a feed, then press `Delete` or click Unsubscribe above the
+article list. The app asks first and tells you how many stored articles the feed is holding, because
+those are deleted with it. Folders have no Unsubscribe button: a folder is a view, not a
+subscription.
+
 ## Requirements
 
 - Windows 10 or later, 64-bit.
@@ -80,6 +85,7 @@ running rather than closing.
 | `s` | star or unstar |
 | `m` | mark read or unread |
 | `Shift+A` | mark everything in the current view read (folder, feed, or search) |
+| `Delete` | unsubscribe from the selected feed |
 | `u` | jump to Unread |
 | `b` | jump to Starred |
 | `/` | focus search |

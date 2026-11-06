@@ -258,6 +258,22 @@ public sealed class ReaderQueriesTests : IDisposable
     }
 
     [Fact]
+    public void Unsubscribing_removes_the_feed_and_reports_how_many_articles_went_with_it()
+    {
+        Assert.Equal(1, _queries.UnsubscribeFeed(_gamma));
+
+        Assert.Equal(2, _queries.GetFeeds().Count);
+        Assert.Empty(_queries.GetArticles(ArticleScope.All, _gamma, null, 0, 50));
+    }
+
+    [Fact]
+    public void Unsubscribing_a_feed_that_is_not_there_removes_nothing()
+    {
+        Assert.Equal(0, _queries.UnsubscribeFeed(9_999));
+        Assert.Equal(3, _queries.GetFeeds().Count);
+    }
+
+    [Fact]
     public void Detail_returns_the_full_body()
     {
         var article = _queries.GetArticles(ArticleScope.All, null, null, 0, 1)[0];
