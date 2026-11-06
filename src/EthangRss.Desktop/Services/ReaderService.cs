@@ -31,15 +31,20 @@ public sealed class ReaderService : IReaderService, IDisposable
             IntervalMinutes = _settings.GetInt(SettingKeys.RefreshIntervalMinutes, 30),
         };
 
-        Subscriptions = new Core.Subscriptions.FeedSubscriptions(database, new FeedFetcher(_client));
+        // One router for both paths, so a channel is fetched the same way whether it is being
+        // added or polled, and neither caller has to know which kind of address it holds.
+        var source = new Core.YouTube.FeedSourceRouter(new FeedFetcher(_client), new Core.YouTube.ChannelFetcher(_client));
+
+        Subscriptions = new Core.Subscriptions.FeedSubscriptions(database, source);
 
         _scheduler = new PollScheduler(
             database,
-            new FeedFetcher(_client),
+            source,
             new FeedRepository(database),
             options,
             () => DateTimeOffset.UtcNow,
-            () => _settings.GetBool(SettingKeys.FilterYoutubeShorts, true));
+            () => _settings.GetBool(SettingKeys.FilterYoutubeShorts, true),
+            () => _settings.GetInt(SettingKeys.ShortsMaxSeconds, 180));
     }
 
     public Core.Subscriptions.FeedSubscriptions Subscriptions { get; }

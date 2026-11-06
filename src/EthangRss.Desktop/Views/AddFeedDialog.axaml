@@ -10,10 +10,10 @@
     <Grid Margin="22" RowDefinitions="Auto,Auto,Auto,*,Auto">
         <TextBlock Grid.Row="0" Classes="h1" Text="Add a feed" Margin="0,0,0,6" />
         <TextBlock Grid.Row="1" Classes="meta" TextWrapping="Wrap"
-                   Text="Paste a feed address, or any website and the app will find its feed." />
+                   Text="Paste a feed address, any website and the app will find its feed, or a YouTube channel address such as https://www.youtube.com/@oompaville" />
 
         <TextBox Grid.Row="2" Name="AddressBox" Margin="0,14,0,0"
-                 PlaceholderText="https://example.com/feed.xml"
+                 PlaceholderText="https://example.com/feed.xml or https://www.youtube.com/@channel"
                  Background="{StaticResource SurfaceSunkenBrush}"
                  BorderBrush="{StaticResource LineBrush}"
                  CornerRadius="6" Padding="10,8" />

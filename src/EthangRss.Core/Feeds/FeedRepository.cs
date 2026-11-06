@@ -21,6 +21,12 @@ public sealed class FeedRepository
     /// <summary>Set false to keep YouTube Shorts. Default matches the app's default setting.</summary>
     public bool FilterYoutubeShorts { get; set; } = true;
 
+    /// <summary>
+    /// The longest clip still counted as a Short. YouTube's ceiling has moved from one minute to
+    /// three, so this is a setting rather than a constant.
+    /// </summary>
+    public int ShortsMaxSeconds { get; set; } = 180;
+
     public int UpsertArticles(long feedId, IReadOnlyList<FeedItem> items)
     {
         if (items.Count == 0)
@@ -33,8 +39,8 @@ public sealed class FeedRepository
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText =
-            "insert into articles (FeedId, Guid, Title, Link, Content, PublishedAt, FetchedAt) " +
-            "values ($feed, $guid, $title, $link, $content, $published, $fetched) " +
+            "insert into articles (FeedId, Guid, Title, Link, Content, PublishedAt, FetchedAt, DurationSeconds) " +
+            "values ($feed, $guid, $title, $link, $content, $published, $fetched, $duration) " +
             "on conflict (FeedId, Guid) do nothing";
 
         var feedParameter = command.Parameters.Add("$feed", SqliteType.Integer);
@@ -44,13 +50,14 @@ public sealed class FeedRepository
         var contentParameter = command.Parameters.Add("$content", SqliteType.Text);
         var publishedParameter = command.Parameters.Add("$published", SqliteType.Text);
         var fetchedParameter = command.Parameters.Add("$fetched", SqliteType.Text);
+        var durationParameter = command.Parameters.Add("$duration", SqliteType.Integer);
 
         var inserted = 0;
         var fetchedAt = DateTimeOffset.UtcNow.ToString("O");
 
         foreach (var item in items)
         {
-            if (string.IsNullOrWhiteSpace(item.Guid) || (FilterYoutubeShorts && ShortsFilter.IsShorts(item.Link)))
+            if (string.IsNullOrWhiteSpace(item.Guid) || IsFiltered(item))
             {
                 continue;
             }
@@ -62,12 +69,35 @@ public sealed class FeedRepository
             contentParameter.Value = item.Content;
             publishedParameter.Value = item.PublishedAt?.ToString("O") ?? (object)DBNull.Value;
             fetchedParameter.Value = fetchedAt;
+            durationParameter.Value = item.Duration is { } duration
+                ? (long)duration.TotalSeconds
+                : DBNull.Value;
 
             inserted += command.ExecuteNonQuery();
         }
 
         transaction.Commit();
         return inserted;
+    }
+
+    /// <summary>
+    /// A clip is dropped by its length when the source gave one, because Shorts are served on
+    /// ordinary watch links and the address alone does not identify them. Only an item with no
+    /// duration falls back to the link rule.
+    /// </summary>
+    private bool IsFiltered(FeedItem item)
+    {
+        if (!FilterYoutubeShorts)
+        {
+            return false;
+        }
+
+        if (item.Duration is { } duration)
+        {
+            return duration.TotalSeconds <= ShortsMaxSeconds;
+        }
+
+        return ShortsFilter.IsShorts(item.Link);
     }
 
     public void RecordFetchSuccess(long feedId, ParsedFeed feed, DateTimeOffset fetchedAt)

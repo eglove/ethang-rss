@@ -66,9 +66,20 @@ public sealed class AppDatabase
         using var connection = Open();
         foreach (var statement in Schema.Statements)
         {
-            using var command = connection.CreateCommand();
-            command.CommandText = statement;
-            command.ExecuteNonQuery();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = statement;
+                command.ExecuteNonQuery();
+            }
+            catch (SqliteException exception) when (IsAlreadyApplied(exception))
+            {
+                // Adding a column is the one statement SQLite cannot write idempotently, so a
+                // database that already has it is the expected outcome on every start after the first.
+            }
         }
     }
+
+    private static bool IsAlreadyApplied(SqliteException exception) =>
+        exception.Message.Contains("duplicate column name", StringComparison.OrdinalIgnoreCase);
 }

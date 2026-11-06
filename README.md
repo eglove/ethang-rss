@@ -37,10 +37,25 @@ Copy it anywhere and double-click it.
 
 ## Add feeds
 
-Press Add feed and paste either a feed address (https://example.com/feed.xml) or just a website
-(https://example.com). For a website the app reads the page's own feed declaration and falls back to
-the usual /feed, /rss, and /atom.xml paths. Nothing is stored until the feed has actually been
-fetched and parsed, so a typo never leaves a broken row behind.
+Press Add feed and paste a feed address (https://example.com/feed.xml), just a website
+(https://example.com), or a YouTube channel (https://www.youtube.com/@oompaville). For a website the
+app reads the page's own feed declaration and falls back to the usual /feed, /rss, and /atom.xml
+paths. Nothing is stored until the feed has actually been fetched and parsed, so a typo never
+leaves a broken row behind.
+
+## YouTube
+
+YouTube stopped serving the per-channel Atom feed: youtube.com/feeds/videos.xml answers 404 for
+every channel, not just some. The reader therefore fetches a channel's own videos page and reads the
+entries out of it. A channel is stored as `youtube://channel/<id>`, so pasting a handle address or a
+channel-id address adds the same subscription once.
+
+Subscriptions added before this change are repointed automatically the next time the app starts and
+keep the articles they already have.
+
+The trade is that this is a page scraper: YouTube can change the page's shape at any time. When it
+does, the affected feeds record a fetch error you can see in the feed list rather than quietly going
+empty.
 
 ## Where your data lives
 

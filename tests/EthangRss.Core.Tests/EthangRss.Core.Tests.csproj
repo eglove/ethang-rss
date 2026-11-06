@@ -19,6 +19,7 @@
   <ItemGroup>
     <None Include="Feeds\Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Import\Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="YouTube\Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

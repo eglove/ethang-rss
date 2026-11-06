@@ -27,6 +27,11 @@ public partial class App : Application
             var database = new AppDatabase();
             database.Migrate();
 
+            // YouTube subscriptions written before the Atom endpoint was retired are repointed
+            // here, before anything polls them, so they recover on the first pass instead of
+            // failing forever.
+            EthangRss.Core.YouTube.ChannelMigration.Run(database);
+
             var settings = new SettingsStore(database);
 
             var service = new ReaderService(database, settings);

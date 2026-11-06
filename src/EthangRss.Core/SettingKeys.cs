@@ -9,6 +9,7 @@ public static class SettingKeys
     public const string KeepReadForever = "KeepReadForever";
     public const string ReadRetentionDays = "ReadRetentionDays";
     public const string FilterYoutubeShorts = "FilterYoutubeShorts";
+    public const string ShortsMaxSeconds = "ShortsMaxSeconds";
     public const string NotificationsEnabled = "NotificationsEnabled";
     public const string NotificationThreshold = "NotificationThreshold";
     public const string StartWithWindows = "StartWithWindows";

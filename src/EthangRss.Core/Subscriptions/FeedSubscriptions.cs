@@ -2,6 +2,7 @@ using EthangRss.Core.Data;
 using EthangRss.Core.Discovery;
 using EthangRss.Core.Feeds;
 using EthangRss.Core.Polling;
+using EthangRss.Core.YouTube;
 using Microsoft.Data.Sqlite;
 
 namespace EthangRss.Core.Subscriptions;
@@ -26,6 +27,13 @@ public sealed class FeedSubscriptions
 
     public async Task<AddFeedResult> AddAsync(string address, CancellationToken cancellationToken)
     {
+        // A channel is one address, not a set of candidates to try, and it is stored under the
+        // channel id its page reveals so a handle and an id can never become two subscriptions.
+        if (ChannelAddress.IsChannelPage(address))
+        {
+            return await AddChannelAsync(address, cancellationToken).ConfigureAwait(false);
+        }
+
         if (!Uri.TryCreate(address, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https"))
         {
             return AddFeedResult.Invalid("Enter a full web address, for example https://example.com/feed.xml");
@@ -40,13 +48,30 @@ public sealed class FeedSubscriptions
             }
 
             var feed = outcome.Feed!;
-            var id = Insert(candidate, feed);
+            var id = Insert(outcome.CanonicalAddress ?? candidate, feed);
             return id is null
                 ? AddFeedResult.Invalid("That feed is already in your list.")
                 : AddFeedResult.Added(id.Value, feed.Title, feed.Items.Count);
         }
 
         return AddFeedResult.Invalid("No feed was found at that address.");
+    }
+
+    private async Task<AddFeedResult> AddChannelAsync(string address, CancellationToken cancellationToken)
+    {
+        var outcome = await _source.FetchAsync(address, cancellationToken).ConfigureAwait(false);
+        if (!outcome.IsSuccess)
+        {
+            return AddFeedResult.Invalid(outcome.Error ?? "That channel could not be read.");
+        }
+
+        var feed = outcome.Feed!;
+        var stored = outcome.CanonicalAddress ?? address;
+        var id = Insert(stored, feed);
+
+        return id is null
+            ? AddFeedResult.Invalid("That channel is already in your list.")
+            : AddFeedResult.Added(id.Value, feed.Title, feed.Items.Count);
     }
 
     private async Task<IReadOnlyList<string>> CandidatesAsync(Uri uri, CancellationToken cancellationToken)

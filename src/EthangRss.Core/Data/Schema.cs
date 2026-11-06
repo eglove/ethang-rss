@@ -35,6 +35,10 @@ internal static class Schema
             ")",
 
         "CREATE INDEX IF NOT EXISTS IX_articles_FeedId ON articles(FeedId)",
+
+        // Added after the first release: a YouTube item's length is the only reliable way to tell a
+        // clip from a video. Existing databases gain the column on the next start.
+        "ALTER TABLE articles ADD COLUMN DurationSeconds INTEGER",
         "CREATE INDEX IF NOT EXISTS IX_articles_IsRead ON articles(IsRead)",
         "CREATE INDEX IF NOT EXISTS IX_articles_PublishedAt ON articles(PublishedAt DESC)",
 

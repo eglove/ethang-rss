@@ -16,9 +16,13 @@ public sealed class StubHttpHandler : HttpMessageHandler
 
     public int CallCount { get; private set; }
 
+    /// <summary>The address of the most recent request, so a test can assert what was asked for.</summary>
+    public string LastRequestUri { get; private set; } = string.Empty;
+
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         CallCount++;
+        LastRequestUri = request.RequestUri?.ToString() ?? string.Empty;
         return Task.FromResult(_responder(request));
     }
 }
