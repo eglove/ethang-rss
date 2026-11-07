@@ -44,7 +44,9 @@ public sealed class ArticleCardHeadlessTests
 
     private static (MainWindow Window, ListBox List) Show()
     {
-        var window = new MainWindow { DataContext = new MainViewModel(new StubService()) };
+        // Addresses go to a recorder, never to Windows: the default opener would launch the
+        // browser of whoever runs the suite.
+        var window = new MainWindow(_ => { }) { DataContext = new MainViewModel(new StubService()) };
         window.Show();
         Dispatcher.UIThread.RunJobs();
 

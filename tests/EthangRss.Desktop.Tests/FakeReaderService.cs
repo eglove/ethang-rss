@@ -33,11 +33,17 @@ public sealed class FakeReaderService : IReaderService
 
     public List<long> Unsubscribed { get; } = [];
 
-    public FakeReaderService AddArticle(long id, string title, long feedId = 1, string feedTitle = "A feed", bool isRead = false)
+    public FakeReaderService AddArticle(
+        long id,
+        string title,
+        long feedId = 1,
+        string feedTitle = "A feed",
+        bool isRead = false,
+        string? webAddress = null)
     {
         Articles[id] = new ArticleBodyVm(id, title, $"https://example.com/{id}", feedTitle, isRead, Starred.Contains(id),
             new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero), "<p>body</p>");
-        Feeds.TryAdd(feedId, new FeedSummaryVm(feedId, feedTitle, null, 0, 0, null));
+        Feeds.TryAdd(feedId, new FeedSummaryVm(feedId, feedTitle, null, 0, 0, null, webAddress));
         if (isRead)
         {
             Read.Add(id);

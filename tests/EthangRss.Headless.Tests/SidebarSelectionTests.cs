@@ -44,7 +44,9 @@ public sealed class SidebarSelectionTests
     private static (MainWindow Window, MainViewModel Model) Show()
     {
         var model = new MainViewModel(new StubService());
-        var window = new MainWindow { DataContext = model };
+        // Addresses go to a recorder, never to Windows: the default opener would launch the
+        // browser of whoever runs the suite.
+        var window = new MainWindow(_ => { }) { DataContext = model };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();

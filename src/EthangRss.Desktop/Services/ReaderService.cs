@@ -56,7 +56,13 @@ public sealed class ReaderService : IReaderService, IDisposable
     public IReadOnlyList<FeedSummaryVm> GetFeeds() =>
         _queries.GetFeeds()
             .Select(feed => new FeedSummaryVm(
-                feed.Id, feed.Title, feed.IconUrl, feed.UnreadCount, feed.ArticleCount, feed.LastError))
+                feed.Id,
+                feed.Title,
+                feed.IconUrl,
+                feed.UnreadCount,
+                feed.ArticleCount,
+                feed.LastError,
+                Core.Subscriptions.FeedPageAddress.For(feed.XmlAddress, feed.Website)))
             .ToList();
 
     public FolderCountsVm GetFolderCounts()

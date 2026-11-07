@@ -20,6 +20,10 @@ article list. The app asks first and tells you how many stored articles the feed
 those are deleted with it. Folders have no Unsubscribe button: a folder is a view, not a
 subscription.
 
+Right-clicking a feed in the sidebar offers Open feed page. An ordinary feed opens the site it
+belongs to, and a YouTube subscription opens its channel on youtube.com rather than the address the
+app stores internally. Folders have no such menu, for the same reason they have no Unsubscribe.
+
 ## Requirements
 
 - Windows 10 or later, 64-bit.

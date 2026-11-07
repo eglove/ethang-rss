@@ -7,13 +7,18 @@ public enum ArticleScopeVm
     Starred,
 }
 
+/// <summary>
+/// A feed as the sidebar shows it. WebAddress is the page a browser should open for it, which is
+/// not the address the app fetches: a channel is stored under the app's own scheme.
+/// </summary>
 public sealed record FeedSummaryVm(
     long Id,
     string Title,
     string? IconUrl,
     int UnreadCount,
     int ArticleCount,
-    string? LastError);
+    string? LastError,
+    string? WebAddress = null);
 
 public sealed record FolderCountsVm(int Unread, int Starred, int All);
 

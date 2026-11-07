@@ -64,7 +64,9 @@ public sealed class ReaderPaneRenderTests
     private static (MainWindow Window, MainViewModel Model, ContentControl Host) Show()
     {
         var model = new MainViewModel(new StubService());
-        var window = new MainWindow { DataContext = model };
+        // Addresses go to a recorder, never to Windows: the default opener would launch the
+        // browser of whoever runs the suite.
+        var window = new MainWindow(_ => { }) { DataContext = model };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.UpdateLayout();

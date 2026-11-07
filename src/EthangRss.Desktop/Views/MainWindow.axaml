@@ -76,6 +76,13 @@
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:NavigationNode">
                                     <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <!-- A feed is a subscription, so its row opens the page it belongs to.
+                                             Folders get no menu: a folder is a view, not a subscription. -->
+                                        <Grid.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Open feed page" Click="OnOpenFeedPageClick" />
+                                            </ContextMenu>
+                                        </Grid.ContextMenu>
                                         <TextBlock Grid.Column="0" Text="&#x26A0;"
                                                    Foreground="{StaticResource ErrorBrush}"
                                                    IsVisible="{Binding HasError}" Margin="0,0,6,0"

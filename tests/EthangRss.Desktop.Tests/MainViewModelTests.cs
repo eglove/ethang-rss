@@ -482,6 +482,42 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void Right_clicking_a_feed_opens_the_page_a_person_would_visit()
+    {
+        var service = new FakeReaderService();
+        service.AddArticle(1, "A video", feedId: 5, feedTitle: "A channel",
+            webAddress: "https://www.youtube.com/channel/UC6Mjg5R5QOJYjrio1JmP8Fg");
+        var model = new MainViewModel(service);
+        string? opened = null;
+        model.OpenUrlRequested += (_, url) => opened = url;
+
+        Assert.True(model.OpenFeedPage(model.Feeds.Single()));
+        Assert.Equal("https://www.youtube.com/channel/UC6Mjg5R5QOJYjrio1JmP8Fg", opened);
+    }
+
+    [Fact]
+    public void A_folder_has_no_page_of_its_own_to_open()
+    {
+        var (model, _) = Build();
+        var opened = false;
+        model.OpenUrlRequested += (_, _) => opened = true;
+
+        Assert.False(model.OpenFeedPage(model.Folders[0]));
+        Assert.False(opened);
+    }
+
+    [Fact]
+    public void A_feed_with_no_openable_address_opens_nothing()
+    {
+        var (model, _) = Build();
+        var opened = false;
+        model.OpenUrlRequested += (_, _) => opened = true;
+
+        Assert.False(model.OpenFeedPage(model.Feeds[0]));
+        Assert.False(opened);
+    }
+
+    [Fact]
     public void Selecting_an_article_that_does_not_exist_leaves_the_reader_blank()
     {
         var (model, _) = Build();

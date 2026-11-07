@@ -368,6 +368,21 @@ public sealed partial class MainViewModel : ViewModelBase
         return true;
     }
 
+    /// <summary>
+    /// Opens the page a feed belongs to: its site for an HTTP feed, its channel page for a YouTube
+    /// subscription. A folder is a view rather than a subscription, so it has no page of its own.
+    /// </summary>
+    public bool OpenFeedPage(NavigationNode? node)
+    {
+        if (node?.WebAddress is not { Length: > 0 } address)
+        {
+            return false;
+        }
+
+        OpenUrlRequested?.Invoke(this, address);
+        return true;
+    }
+
     private bool OpenCurrent()
     {
         if (ReaderLink is not { Length: > 0 } link)

@@ -11,13 +11,25 @@ namespace EthangRss.Desktop.Views;
 public partial class MainWindow : Window
 {
     private readonly ImageLoader _images = new();
+    private readonly Action<string> _openUrl;
     private EthangRss.Core.Subscriptions.FeedSubscriptions? _subscriptions;
 
     /// <summary>The article the reader pane currently shows, so a redraw only happens for a new one.</summary>
     private long? _renderedArticleId;
 
+    /// <summary>
+    /// The window opens addresses through Windows, unless a caller supplies its own opener. Tests
+    /// supply one because the default launches the browser of whoever is running them.
+    /// </summary>
     public MainWindow()
+        : this(OpenInBrowser)
     {
+    }
+
+    public MainWindow(Action<string> openUrl)
+    {
+        ArgumentNullException.ThrowIfNull(openUrl);
+        _openUrl = openUrl;
         InitializeComponent();
 
         AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
@@ -43,7 +55,7 @@ public partial class MainWindow : Window
 
         _subscriptions ??= App.Services?.Subscriptions;
 
-        model.OpenUrlRequested += (_, url) => OpenUrl(url);
+        model.OpenUrlRequested += (_, url) => _openUrl(url);
         model.FocusSearchRequested += (_, _) => this.FindControl<TextBox>("SearchBox")?.Focus();
 
         RenderBodyForCurrentArticle();
@@ -82,7 +94,7 @@ public partial class MainWindow : Window
         host.Content = ArticleRenderer.Build(
             HtmlContent.Parse(html, baseUrl),
             _images,
-            OpenUrl,
+            _openUrl,
             baseUrl);
     }
 
@@ -177,6 +189,18 @@ public partial class MainWindow : Window
 
     private void OnOpenClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.OpenInBrowser);
 
+    /// <summary>
+    /// The sidebar row's menu. The node comes from the row the menu was opened on, so the address
+    /// belongs to the feed that was right-clicked rather than to whatever is selected.
+    /// </summary>
+    private void OnOpenFeedPageClick(object? sender, RoutedEventArgs eventArgs)
+    {
+        if (sender is MenuItem { DataContext: NavigationNode node })
+        {
+            Model?.OpenFeedPage(node);
+        }
+    }
+
     private void OnStarClick(object? sender, RoutedEventArgs eventArgs) => Model?.Run(ReaderCommand.ToggleStar);
 
     private void OnToggleReadClick(object? sender, RoutedEventArgs eventArgs) =>
@@ -216,7 +240,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private static void OpenUrl(string url)
+    private static void OpenInBrowser(string url)
     {
         try
         {

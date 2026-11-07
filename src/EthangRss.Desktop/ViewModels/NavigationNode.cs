@@ -26,6 +26,9 @@ public sealed partial class NavigationNode : ObservableObject
 
     public string? LastError { get; private init; }
 
+    /// <summary>The page this feed belongs to, or null for a folder or a feed with no page.</summary>
+    public string? WebAddress { get; private init; }
+
     [ObservableProperty]
     public partial int UnreadCount { get; set; }
 
@@ -41,6 +44,7 @@ public sealed partial class NavigationNode : ObservableObject
     {
         IconUrl = feed.IconUrl,
         LastError = feed.LastError,
+        WebAddress = feed.WebAddress,
     };
 
     partial void OnUnreadCountChanged(int value)
