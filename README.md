@@ -1,4 +1,4 @@
-# Ethang RSS
+# eThang RSS
 
 A local-first Windows desktop RSS reader. It has its own SQLite database, no browser tab, no server,
 and no account. Everything runs on your machine; the app talks to the network only to fetch feeds.
