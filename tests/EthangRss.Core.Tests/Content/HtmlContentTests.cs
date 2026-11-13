@@ -111,6 +111,17 @@ public sealed class HtmlContentTests
     }
 
     [Fact]
+    public void A_quoted_attribute_containing_a_bracket_does_not_leak_into_the_text()
+    {
+        // Tailwind-style values such as class="[&>a]:hidden" put a '>' inside a quoted attribute.
+        // A tag match that stops at the first '>' ends mid-attribute and the rest arrives as text.
+        var body = Parse("<p><span class=\"[&>a]:hidden\">Visible words only</span></p>");
+
+        var block = Assert.IsType<ParagraphBlock>(Assert.Single(body.Blocks));
+        Assert.Equal("Visible words only", block.PlainText);
+    }
+
+    [Fact]
     public void Plain_text_without_markup_still_produces_a_paragraph()
     {
         var body = Parse("Just words with no tags.");

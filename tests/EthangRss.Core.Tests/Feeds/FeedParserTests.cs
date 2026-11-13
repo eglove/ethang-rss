@@ -152,6 +152,35 @@ public sealed class FeedParserTests
     }
 
     [Fact]
+    public void Content_encoded_wins_over_a_truncated_description()
+    {
+        var feed = FeedParser.Parse(Fixture("teaser.xml"), new Uri("https://teaser.example.com/feed.xml")).Feed!;
+
+        var item = feed.Items.Single(entry => entry.Guid == "guid-both");
+        Assert.Contains("The whole article", item.Content, StringComparison.Ordinal);
+        Assert.Contains("Second paragraph.", item.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("Read the rest on the site.", item.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void An_item_with_only_a_description_keeps_it()
+    {
+        var feed = FeedParser.Parse(Fixture("teaser.xml"), new Uri("https://teaser.example.com/feed.xml")).Feed!;
+
+        var item = feed.Items.Single(entry => entry.Guid == "guid-description");
+        Assert.Equal("The only body this item has.", item.Content);
+    }
+
+    [Fact]
+    public void An_item_with_only_content_encoded_keeps_it()
+    {
+        var feed = FeedParser.Parse(Fixture("teaser.xml"), new Uri("https://teaser.example.com/feed.xml")).Feed!;
+
+        var item = feed.Items.Single(entry => entry.Guid == "guid-encoded");
+        Assert.Contains("Encoded body with no description at all.", item.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_feed_with_no_body_leaves_content_empty_rather_than_inventing_one()
     {
         var feed = FeedParser.Parse(Fixture("headlines.xml"), new Uri("https://headlines.example.com/feed.xml")).Feed!;

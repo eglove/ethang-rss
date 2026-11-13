@@ -29,6 +29,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         KeepReadForever = retention.KeepsReadForever;
         ReadRetentionDays = retention.ReadDays ?? RetentionPolicy.DefaultDays;
         FilterYoutubeShorts = store.GetBool(SettingKeys.FilterYoutubeShorts, true);
+        ReadingModeEnabled = store.GetBool(SettingKeys.ReadingModeEnabled, true);
         NotificationsEnabled = store.GetBool(SettingKeys.NotificationsEnabled, false);
         NotificationThreshold = store.GetInt(SettingKeys.NotificationThreshold, 1);
         StartWithWindows = store.GetBool(SettingKeys.StartWithWindows, false);
@@ -57,6 +58,9 @@ public sealed partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     public partial bool FilterYoutubeShorts { get; set; }
+
+    [ObservableProperty]
+    public partial bool ReadingModeEnabled { get; set; }
 
     [ObservableProperty]
     public partial bool NotificationsEnabled { get; set; }
@@ -88,6 +92,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _store.SetInt(SettingKeys.RefreshIntervalMinutes, Math.Max(1, RefreshIntervalMinutes));
         Policy.Save(_store);
         _store.SetBool(SettingKeys.FilterYoutubeShorts, FilterYoutubeShorts);
+        _store.SetBool(SettingKeys.ReadingModeEnabled, ReadingModeEnabled);
         _store.SetBool(SettingKeys.NotificationsEnabled, NotificationsEnabled);
         _store.SetInt(SettingKeys.NotificationThreshold, Math.Max(1, NotificationThreshold));
         _store.SetBool(SettingKeys.StartWithWindows, StartWithWindows);

@@ -32,10 +32,13 @@ public sealed class ReaderPaneRenderTests
             new ArticleRowVm(2, "Second headline", "A feed", null, Read.Contains(2), false, Published, null),
         ];
 
+        // A body long enough to be an article rather than a teaser: reading mode only runs for a
+        // feed that published a sentence, so this is the ordinary case where there is nothing to
+        // report about the article on screen.
         public ArticleBodyVm? GetArticle(long articleId) =>
             new(articleId, articleId == 1 ? "First headline" : "Second headline",
                 "https://example.com/article", "A feed", Read.Contains(articleId), false, Published,
-                "<p>body</p>");
+                "<p>" + new string('x', 4000) + "</p>");
 
         public void MarkRead(long articleId, bool isRead)
         {
@@ -56,6 +59,11 @@ public sealed class ReaderPaneRenderTests
         public void DeleteFeed(long feedId) { }
 
         public int UnsubscribeFeed(long feedId) => 0;
+
+        public Task<bool> FetchFullArticleAsync(long articleId, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public bool ReadingModeEnabled => true;
 
         public Task<PollResultVm> RefreshAsync(CancellationToken cancellationToken) =>
             Task.FromResult(new PollResultVm(0, 0, 0, 0));
@@ -100,6 +108,41 @@ public sealed class ReaderPaneRenderTests
         Dispatcher.UIThread.RunJobs();
 
         Assert.NotSame(rendered, host.Content);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_pane_shows_the_note_reading_mode_left()
+    {
+        var (window, model, _) = Show();
+
+        // A page that gave no more text than the feed did has to say so, or the article simply
+        // looks shorter than it is with no explanation.
+        model.ReaderNote = "This article's page had no more text than the feed did.";
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs();
+
+        var shown = window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Any(block => block.Text == "This article's page had no more text than the feed did." && block.IsVisible);
+
+        Assert.True(shown);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_note_is_hidden_when_there_is_nothing_to_report()
+    {
+        var (window, _, _) = Show();
+
+        var note = window.FindControl<TextBlock>("ReaderNote");
+
+        // Nothing to report means the note is not drawn at all, rather than drawn empty: an empty
+        // line above the article would be a gap with no explanation.
+        Assert.NotNull(note);
+        Assert.Null(note.Text);
+        Assert.False(note.IsEffectivelyVisible);
         window.Close();
     }
 

@@ -154,7 +154,7 @@ public sealed class ReaderQueries
         using var command = connection.CreateCommand();
         command.CommandText =
             "select a.Id, a.Title, a.Link, coalesce(a.Content, ''), f.Title, a.FeedId, a.IsRead, " +
-            "a.IsStarred, a.PublishedAt from articles a join feeds f on f.Id = a.FeedId where a.Id = $id";
+            "a.IsStarred, a.PublishedAt, a.FullContent from articles a join feeds f on f.Id = a.FeedId where a.Id = $id";
         command.Parameters.AddWithValue("$id", articleId);
 
         using var reader = command.ExecuteReader();
@@ -172,8 +172,20 @@ public sealed class ReaderQueries
             reader.GetInt64(5),
             reader.GetInt32(6) == 1,
             reader.GetInt32(7) == 1,
-            ParseDate(reader.IsDBNull(8) ? null : reader.GetString(8)));
+            ParseDate(reader.IsDBNull(8) ? null : reader.GetString(8)),
+            reader.IsDBNull(9) ? null : reader.GetString(9));
     }
+
+    /// <summary>
+    /// Records what reading mode found for an article. A null body records the attempt without a
+    /// result, which is how a page that offered nothing stops being fetched again; the feed's own
+    /// body is never touched, so a later re-fetch cannot undo this.
+    /// </summary>
+    public void SaveFullContent(long articleId, string? recovered, DateTimeOffset at) => ExecuteCount(
+        "update articles set FullContent = $content, FullContentAt = $at where Id = $id",
+        ("$content", recovered ?? string.Empty),
+        ("$at", at.ToString("O")),
+        ("$id", articleId));
 
     public int MarkRead(long articleId, bool isRead) => ExecuteCount(
         "update articles set IsRead = $value where Id = $id",

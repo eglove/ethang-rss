@@ -9,6 +9,9 @@ public static class SettingKeys
     public const string KeepReadForever = "KeepReadForever";
     public const string ReadRetentionDays = "ReadRetentionDays";
     public const string FilterYoutubeShorts = "FilterYoutubeShorts";
+
+    /// <summary>On by default: fetch the article's page when the feed only published a teaser.</summary>
+    public const string ReadingModeEnabled = "ReadingModeEnabled";
     public const string ShortsMaxSeconds = "ShortsMaxSeconds";
     public const string NotificationsEnabled = "NotificationsEnabled";
     public const string NotificationThreshold = "NotificationThreshold";

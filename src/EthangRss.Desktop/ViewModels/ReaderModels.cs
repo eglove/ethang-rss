@@ -38,6 +38,10 @@ public sealed record ArticleRowVm(
     public bool HasPublishedLabel => PublishedAt is not null;
 }
 
+/// <param name="FullContent">
+/// The article text recovered from the page itself, or null when reading mode has not run for
+/// this article. An empty string means it ran and the page offered no prose.
+/// </param>
 public sealed record ArticleBodyVm(
     long Id,
     string Title,
@@ -46,7 +50,30 @@ public sealed record ArticleBodyVm(
     bool IsRead,
     bool IsStarred,
     DateTimeOffset? PublishedAt,
-    string RawContent);
+    string RawContent,
+    string? FullContent = null)
+{
+    /// <summary>True when reading mode has already run for this article, whatever it found.</summary>
+    public bool FullContentAttempted => FullContent is not null;
+
+    /// <summary>The body to draw: the recovered article when there is one, the feed's body otherwise.</summary>
+    public string PreferredContent =>
+        FullContent is { Length: > 0 } recovered ? recovered : RawContent;
+
+    /// <summary>
+    /// True when the feed only gave a teaser, which is the case reading mode exists for. A body
+    /// that is already an article is left alone: fetching the page would cost a request to show
+    /// what is already on screen.
+    /// </summary>
+    public bool NeedsFullContent => !FullContentAttempted && RawContent.Length < TeaserLength;
+
+    /// <summary>
+    /// What counts as a teaser. Measured against the feeds in this reader: a feed that publishes the
+    /// article stores thousands of characters, and one that publishes a sentence stores a few
+    /// hundred. The gap between them is wide, so the exact threshold is not delicate.
+    /// </summary>
+    public const int TeaserLength = 600;
+}
 
 public sealed record PollResultVm(int Polled, int Succeeded, int Failed, int NewArticles);
 

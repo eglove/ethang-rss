@@ -172,7 +172,14 @@
                 </Border>
 
                 <ScrollViewer Grid.Row="2" Padding="24,4,24,24" IsVisible="{Binding HasReaderArticle}">
-                    <ContentControl Name="ReaderHost" />
+                    <StackPanel Spacing="12">
+                        <!-- What reading mode has to say about this article: its page gave no more
+                             text, or the page could not be read. Hidden when there is nothing to report. -->
+                        <TextBlock Name="ReaderNote" Classes="meta" TextWrapping="Wrap"
+                                   Text="{Binding ReaderNote}"
+                                   IsVisible="{Binding HasReaderNote}" />
+                        <ContentControl Name="ReaderHost" />
+                    </StackPanel>
                 </ScrollViewer>
 
                 <TextBlock Grid.Row="2" Text="Select an article to read it" Classes="meta"

@@ -86,6 +86,21 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool ReaderIsRead { get; set; }
 
+    /// <summary>True while reading mode is fetching the rest of the article being shown.</summary>
+    [ObservableProperty]
+    public partial bool IsFetchingArticle { get; set; }
+
+    /// <summary>
+    /// What reading mode has to say about the article on screen: that its page offered no more text,
+    /// or that the page could not be read. Null when there is nothing to report.
+    /// </summary>
+    [ObservableProperty]
+    public partial string? ReaderNote { get; set; }
+
+    public bool HasReaderNote => !string.IsNullOrEmpty(ReaderNote);
+
+    partial void OnReaderNoteChanged(string? value) => OnPropertyChanged(nameof(HasReaderNote));
+
     [ObservableProperty]
     public partial int UnreadTotal { get; set; }
 
@@ -207,6 +222,8 @@ public sealed partial class MainViewModel : ViewModelBase
             ReaderIsStarred = false;
             ReaderIsRead = false;
             ReaderArticleId = null;
+            ReaderNote = null;
+            IsFetchingArticle = false;
             OnPropertyChanged(nameof(HasReaderArticle));
             return;
         }
@@ -222,13 +239,73 @@ public sealed partial class MainViewModel : ViewModelBase
         ReaderMeta = published.Length == 0
             ? detail.FeedTitle
             : detail.FeedTitle + "  |  " + published;
-        ReaderBody = detail.RawContent;
+        ReaderBody = detail.PreferredContent;
         ReaderLink = detail.Link;
         ReaderIsStarred = detail.IsStarred;
         ReaderIsRead = detail.IsRead;
         ReaderArticleId = detail.Id;
+        IsFetchingArticle = false;
+        ReaderNote = null;
         OnPropertyChanged(nameof(HasReaderArticle));
 
+        // A feed that published only a teaser leaves the rest of the article on the page. Reading
+        // mode fetches it once, in the background, so the pane shows the teaser immediately rather
+        // than an empty box while a request is in flight.
+        if (_service.ReadingModeEnabled && detail.NeedsFullContent && !IsVideo(detail.Link))
+        {
+            _ = FetchFullContentAsync(detail.Id);
+        }
+    }
+
+    /// <summary>
+    /// A video article is watched rather than read: its page is a player, and the extractor would
+    /// only hand back the description the feed already carried.
+    /// </summary>
+    private static bool IsVideo(string? link) =>
+        EthangRss.Core.Content.MediaLinks.Resolve(link)?.EmbedUrl is not null;
+
+    /// <summary>
+    /// Runs reading mode for one article and redraws the pane when it lands. The article is checked
+    /// again before the result is shown, because a person can move on while the request is in
+    /// flight and the pane must not jump back to an article they left.
+    /// </summary>
+    private async Task FetchFullContentAsync(long articleId)
+    {
+        IsFetchingArticle = true;
+        try
+        {
+            var recovered = await _service.FetchFullArticleAsync(articleId, CancellationToken.None).ConfigureAwait(true);
+            if (ReaderArticleId != articleId)
+            {
+                return;
+            }
+
+            var detail = _service.GetArticle(articleId);
+            if (detail is null)
+            {
+                return;
+            }
+
+            ReaderBody = detail.PreferredContent;
+
+            // The note belongs beside the article rather than in the status bar, which is where the
+            // person's own actions report. Text that simply appeared needs no announcement; a page
+            // that gave nothing does, or the article looks shorter than it is.
+            ReaderNote = recovered ? null : "This article's page had no more text than the feed did.";
+        }
+        catch (Exception exception)
+        {
+            // A fetch that fails leaves the teaser the feed carried, and says so where the person is
+            // looking rather than in the status bar.
+            ReaderNote = Describe("fetch the rest of this article", exception);
+        }
+        finally
+        {
+            if (ReaderArticleId == articleId)
+            {
+                IsFetchingArticle = false;
+            }
+        }
     }
 
     partial void OnSelectedNodeChanged(NavigationNode? value)

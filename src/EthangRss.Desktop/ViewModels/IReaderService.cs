@@ -15,6 +15,16 @@ public interface IReaderService
 
     ArticleBodyVm? GetArticle(long articleId);
 
+    /// <summary>Whether opening a teaser article fetches its page. The person's setting, not a constant.</summary>
+    bool ReadingModeEnabled { get; }
+
+    /// <summary>
+    /// Fetches the article's own page and stores its text, for a feed that only published a teaser.
+    /// Returns true when text was recovered and stored. A page that offers nothing is recorded as
+    /// tried, so it is not fetched again on the next open.
+    /// </summary>
+    Task<bool> FetchFullArticleAsync(long articleId, CancellationToken cancellationToken);
+
     void MarkRead(long articleId, bool isRead);
 
     /// <summary>Marks read every unread article the given view shows, and returns the count.</summary>

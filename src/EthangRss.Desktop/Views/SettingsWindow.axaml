@@ -52,6 +52,11 @@
                     <CheckBox Content="Filter out YouTube Shorts" IsChecked="{Binding FilterYoutubeShorts}" />
                     <TextBlock Classes="meta" TextWrapping="Wrap"
                                Text="Shorts are video clips, not articles. Turning this off lets them into the list." />
+
+                    <CheckBox Content="Fetch the rest of a teaser article" IsChecked="{Binding ReadingModeEnabled}"
+                              Margin="0,10,0,0" />
+                    <TextBlock Classes="meta" TextWrapping="Wrap"
+                               Text="Some feeds publish one sentence and a link. With this on, opening such an article fetches its page once and shows the article text instead. Turning it off means one request fewer per article, and a teaser stays a teaser." />
                 </StackPanel>
 
                 <StackPanel Spacing="6">

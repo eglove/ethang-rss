@@ -82,10 +82,10 @@ public static class FeedParser
         {
             var link = ChildText(element, "link") ?? string.Empty;
             var title = ChildText(element, "title") ?? TitlePlaceholder;
-            var content = ChildText(element, "description")
-                          ?? ChildText(element, "encoded")
-                          ?? ChildText(element, "content")
-                          ?? string.Empty;
+            var content = SelectBody(
+                ChildText(element, "description"),
+                ChildText(element, "encoded"),
+                ChildText(element, "content"));
             var guid = ChildText(element, "guid") ?? link;
             var published = DateNormalizer.Parse(
                 ChildText(element, "pubDate") ?? ChildText(element, "date") ?? ChildText(element, "published"));
@@ -103,10 +103,11 @@ public static class FeedParser
         {
             var link = ResolveAtomEntryLink(element);
             var title = ChildText(element, "title") ?? TitlePlaceholder;
-            var content = ChildText(element, "content")
-                          ?? ChildText(element, "summary")
-                          ?? ReadMediaBody(element)
-                          ?? string.Empty;
+            var content = SelectBody(ChildText(element, "content"), ChildText(element, "summary"));
+            if (content.Length == 0)
+            {
+                content = ReadMediaBody(element) ?? string.Empty;
+            }
             var guid = ChildText(element, "id") ?? link;
             var published = DateNormalizer.Parse(
                 ChildText(element, "published") ?? ChildText(element, "updated"));
@@ -203,6 +204,30 @@ public static class FeedParser
 
         var image = "<p><img src=\"" + thumbnail + "\" alt=\"\"></p>";
         return string.IsNullOrWhiteSpace(description) ? image : image + "<p>" + description + "</p>";
+    }
+
+    /// <summary>
+    /// The body a feed offers more than once. Plenty of feeds publish a one-line description beside
+    /// the whole article in content:encoded, so taking the first field that exists throws the
+    /// article away and leaves the teaser. The longest body is the one worth storing.
+    /// </summary>
+    private static string SelectBody(params string?[] candidates)
+    {
+        string? best = null;
+        foreach (var candidate in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(candidate))
+            {
+                continue;
+            }
+
+            if (best is null || candidate.Length > best.Length)
+            {
+                best = candidate;
+            }
+        }
+
+        return best ?? string.Empty;
     }
 
     private static string? ResolveIcon(XElement container, string website, Uri feedAddress)

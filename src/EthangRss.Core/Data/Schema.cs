@@ -39,6 +39,12 @@ internal static class Schema
         // Added after the first release: a YouTube item's length is the only reliable way to tell a
         // clip from a video. Existing databases gain the column on the next start.
         "ALTER TABLE articles ADD COLUMN DurationSeconds INTEGER",
+
+        // Reading mode: the article text recovered from the page itself, for feeds that publish
+        // only a teaser. Null means it has not been fetched yet; an empty string means the page
+        // was fetched and offered nothing, which is what stops a second attempt.
+        "ALTER TABLE articles ADD COLUMN FullContent TEXT",
+        "ALTER TABLE articles ADD COLUMN FullContentAt TEXT",
         "CREATE INDEX IF NOT EXISTS IX_articles_IsRead ON articles(IsRead)",
         "CREATE INDEX IF NOT EXISTS IX_articles_PublishedAt ON articles(PublishedAt DESC)",
 

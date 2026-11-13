@@ -1,4 +1,5 @@
 using EthangRss.Core;
+using EthangRss.Core.Content;
 using EthangRss.Core.Data;
 using EthangRss.Core.Feeds;
 using EthangRss.Core.Polling;
@@ -15,6 +16,7 @@ public sealed class ReaderService : IReaderService, IDisposable
     private readonly SettingsStore _settings;
     private readonly PollScheduler _scheduler;
     private readonly HttpClient _client;
+    private readonly FeedFetcher _fetcher;
     private readonly CancellationTokenSource _shutdown = new();
 
     public ReaderService(AppDatabase database, SettingsStore settings)
@@ -33,7 +35,8 @@ public sealed class ReaderService : IReaderService, IDisposable
 
         // One router for both paths, so a channel is fetched the same way whether it is being
         // added or polled, and neither caller has to know which kind of address it holds.
-        var source = new Core.YouTube.FeedSourceRouter(new FeedFetcher(_client), new Core.YouTube.ChannelFetcher(_client));
+        _fetcher = new FeedFetcher(_client);
+        var source = new Core.YouTube.FeedSourceRouter(_fetcher, new Core.YouTube.ChannelFetcher(_client));
 
         Subscriptions = new Core.Subscriptions.FeedSubscriptions(database, source);
 
@@ -48,6 +51,12 @@ public sealed class ReaderService : IReaderService, IDisposable
     }
 
     public Core.Subscriptions.FeedSubscriptions Subscriptions { get; }
+
+    /// <summary>
+    /// Read on every open rather than cached, so turning the setting off takes effect on the next
+    /// article without a restart.
+    /// </summary>
+    public bool ReadingModeEnabled => _settings.GetBool(SettingKeys.ReadingModeEnabled, true);
 
     public SettingsStore Settings => _settings;
 
@@ -111,7 +120,43 @@ public sealed class ReaderService : IReaderService, IDisposable
                 detail.IsRead,
                 detail.IsStarred,
                 detail.PublishedAt,
-                detail.Content);
+                detail.Content,
+                detail.FullContent);
+    }
+
+    /// <summary>
+    /// Fetches the article's own page and keeps its text. One request, once per article: a page
+    /// that offers nothing is stored as tried so the next open does not ask again. The page is
+    /// fetched with the same client and agent the feeds use, because an unrecognized client is
+    /// refused by more sites than a plain one is.
+    /// </summary>
+    public async Task<bool> FetchFullArticleAsync(long articleId, CancellationToken cancellationToken)
+    {
+        var detail = _queries.GetArticle(articleId);
+        if (detail is null || detail.FullContentAttempted)
+        {
+            return false;
+        }
+
+        string? recovered;
+        try
+        {
+            var page = await _fetcher.FetchPageAsync(detail.Link, cancellationToken).ConfigureAwait(false);
+            recovered = ArticleExtractor.Extract(page);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            // A page that cannot be read is recorded below as tried, so a dead link costs one
+            // request rather than one per open.
+            recovered = null;
+        }
+
+        _queries.SaveFullContent(articleId, recovered, DateTimeOffset.UtcNow);
+        return recovered is { Length: > 0 };
     }
 
     public void MarkRead(long articleId, bool isRead) => _queries.MarkRead(articleId, isRead);

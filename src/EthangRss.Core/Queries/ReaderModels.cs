@@ -36,6 +36,10 @@ public sealed record ArticleListItem(
     string? Summary);
 
 /// <summary>A full article for the reader pane.</summary>
+/// <param name="FullContent">
+/// The article text recovered from the page itself, or null when reading mode has not run for
+/// this article. An empty string means it ran and the page offered no prose.
+/// </param>
 public sealed record ArticleDetail(
     long Id,
     string Title,
@@ -45,7 +49,19 @@ public sealed record ArticleDetail(
     long FeedId,
     bool IsRead,
     bool IsStarred,
-    DateTimeOffset? PublishedAt);
+    DateTimeOffset? PublishedAt,
+    string? FullContent = null)
+{
+    /// <summary>
+    /// True when reading mode has already run, whether or not it found anything. This is what stops
+    /// a page that offered nothing from being fetched again on every open.
+    /// </summary>
+    public bool FullContentAttempted => FullContent is not null;
+
+    /// <summary>The body the pane should draw: the recovered article when there is one.</summary>
+    public string PreferredContent =>
+        FullContent is { Length: > 0 } recovered ? recovered : Content;
+}
 
 /// <summary>The unread and starred totals shown beside the fixed folders.</summary>
 public sealed record FolderCounts(int Unread, int Starred, int All);

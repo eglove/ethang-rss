@@ -365,10 +365,15 @@ public static partial class HtmlContent
     [GeneratedRegex(@"\ssrc\s*=\s*[`""']?[^`""'>\s]*[`""']?", RegexOptions.IgnoreCase)]
     private static partial Regex SrcCapture();
 
-    [GeneratedRegex(@"<(/?)([a-zA-Z0-9]+)\b[^>]*>", RegexOptions.IgnoreCase)]
+    // The quoted run is matched before the closing bracket for the same reason TagStripper does it:
+    // a '>' inside an attribute value is not the end of the tag.
+    [GeneratedRegex("<(/?)([a-zA-Z0-9]+)\\b(?:[^>\"']|\"[^\"]*\"|'[^']*')*>", RegexOptions.IgnoreCase)]
     private static partial Regex InlineTag();
 
-    [GeneratedRegex(@"<[^>]*>")]
+    // A '>' inside a quoted attribute value does not end a tag: real bodies carry values such as
+    // class="[&>a]:hidden", and stopping at the first '>' leaves the rest of the attribute to be
+    // read as article text.
+    [GeneratedRegex("<(?:[^>\"']|\"[^\"]*\"|'[^']*')*>")]
     private static partial Regex TagStripper();
 
     [GeneratedRegex(@"[ \t\r\n]+")]

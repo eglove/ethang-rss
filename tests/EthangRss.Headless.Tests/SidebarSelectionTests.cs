@@ -37,6 +37,11 @@ public sealed class SidebarSelectionTests
 
         public int UnsubscribeFeed(long feedId) => 0;
 
+        public Task<bool> FetchFullArticleAsync(long articleId, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public bool ReadingModeEnabled => true;
+
         public Task<PollResultVm> RefreshAsync(CancellationToken cancellationToken) =>
             Task.FromResult(new PollResultVm(0, 0, 0, 0));
     }

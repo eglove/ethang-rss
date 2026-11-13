@@ -33,16 +33,27 @@ public sealed class FakeReaderService : IReaderService
 
     public List<long> Unsubscribed { get; } = [];
 
+    /// <summary>Every article id reading mode was asked to fetch, in the order it was asked.</summary>
+    public List<long> FullContentFetches { get; } = [];
+
+    /// <summary>What a fetch reports: false means the page offered no prose.</summary>
+    public bool FullContentResult { get; set; } = true;
+
+    /// <summary>Set to make the next fetch fail the way a dead network does.</summary>
+    public Exception? FullContentFailure { get; set; }
+
     public FakeReaderService AddArticle(
         long id,
         string title,
         long feedId = 1,
         string feedTitle = "A feed",
         bool isRead = false,
-        string? webAddress = null)
+        string? webAddress = null,
+        string? link = null,
+        string content = "<p>body</p>")
     {
-        Articles[id] = new ArticleBodyVm(id, title, $"https://example.com/{id}", feedTitle, isRead, Starred.Contains(id),
-            new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero), "<p>body</p>");
+        Articles[id] = new ArticleBodyVm(id, title, link ?? $"https://example.com/{id}", feedTitle, isRead, Starred.Contains(id),
+            new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero), content);
         Feeds.TryAdd(feedId, new FeedSummaryVm(feedId, feedTitle, null, 0, 0, null, webAddress));
         if (isRead)
         {
@@ -102,10 +113,32 @@ public sealed class FakeReaderService : IReaderService
             .ToList();
     }
 
+    /// <summary>Set false to leave teaser articles as the feed published them.</summary>
+    public bool ReadingModeEnabled { get; set; } = true;
+
     public ArticleBodyVm? GetArticle(long articleId) =>
         Articles.TryGetValue(articleId, out var article)
             ? article with { IsRead = Read.Contains(articleId), IsStarred = Starred.Contains(articleId) }
             : null;
+
+    public Task<bool> FetchFullArticleAsync(long articleId, CancellationToken cancellationToken)
+    {
+        Calls.Add("FetchFullArticle:" + articleId);
+        FullContentFetches.Add(articleId);
+
+        if (FullContentFailure is { } failure)
+        {
+            throw failure;
+        }
+
+        if (FullContentResult && Articles.TryGetValue(articleId, out var article))
+        {
+            Articles[articleId] = article with { FullContent = "<p>The whole article.</p>" };
+            return Task.FromResult(true);
+        }
+
+        return Task.FromResult(false);
+    }
 
     public void MarkRead(long articleId, bool isRead)
     {

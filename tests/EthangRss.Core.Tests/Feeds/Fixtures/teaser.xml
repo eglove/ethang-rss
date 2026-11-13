@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Teaser Feed</title>
+    <link>https://teaser.example.com/</link>
+    <description>A feed that truncates its description</description>
+    <item>
+      <title>Both bodies present</title>
+      <link>https://teaser.example.com/both</link>
+      <guid isPermaLink="false">guid-both</guid>
+      <description>Read the rest on the site.</description>
+      <content:encoded><![CDATA[<p>The whole article, every paragraph of it.</p><p>Second paragraph.</p>]]></content:encoded>
+      <pubDate>Tue, 03 Nov 2026 10:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Description only</title>
+      <link>https://teaser.example.com/description-only</link>
+      <guid isPermaLink="false">guid-description</guid>
+      <description>The only body this item has.</description>
+      <pubDate>Tue, 03 Nov 2026 11:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Encoded only</title>
+      <link>https://teaser.example.com/encoded-only</link>
+      <guid isPermaLink="false">guid-encoded</guid>
+      <content:encoded><![CDATA[<p>Encoded body with no description at all.</p>]]></content:encoded>
+      <pubDate>Tue, 03 Nov 2026 12:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

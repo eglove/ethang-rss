@@ -11,6 +11,22 @@ and no account. Everything runs on your machine; the app talks to the network on
 - Searches article titles and bodies (SQLite full-text index).
 - Plays video articles inline, including YouTube, instead of showing a headline with no body.
 
+## Reading mode
+
+Plenty of feeds publish a sentence and a link instead of the article. When you open one of those,
+the reader fetches that article's page once, keeps the text, and shows it in place of the teaser.
+The next time you open the same article it is already there, and no second request is made.
+
+It is a fetch you asked for by opening the article, not a background crawl: nothing is fetched for
+articles you never open. It runs only when the feed's own body is under about 600 characters, so a
+feed that already carries the article costs nothing. Video articles are skipped, because their page
+is a player and the text on it is the description the feed already sent.
+
+The trade is that this is a page scraper, like the YouTube channel reader. It finds the article by
+density - the region of the page that is mostly prose rather than mostly links - so a redesign can
+degrade it. When a page gives no more text than the feed did, the article says so above the body
+rather than quietly looking short. Turn it off in Settings and teasers stay teasers.
+
 Reading is explicit: moving through the list never changes what you have read. Marking read happens
 only when you press `m`, click Mark read, or press `Shift+A` to clear the whole view you are looking
 at - a folder, a single feed, or the results of a search.
@@ -102,7 +118,7 @@ running rather than closing.
 - Refresh interval: how often feeds are checked. Default 30 minutes.
 - Keep every article forever: on by default. Turn it off and set a number of days to prune old
   articles; starred ones are always kept.
-- Filter out YouTube Shorts: on by default. Shorts are clips, not articles.
+- Fetch the rest of a teaser article: on by default. See Reading mode above.
 - Notifications: off by default. When on, one batched notification per check.
 - Start with Windows: off by default.
 
