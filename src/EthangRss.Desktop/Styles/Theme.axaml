@@ -23,6 +23,14 @@
         <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}" />
 
         <FontFamily x:Key="UiFont">Inter, Segoe UI, sans-serif</FontFamily>
+
+        <!--
+            The reading measure: how wide the article column is allowed to get, in pixels. 65
+            characters is the long-standing figure for comfortable reading, and at the body's 15px
+            that is about 620px. The title and the body share this one value so they cannot drift
+            apart - a title running wider than its own text reads as a mistake.
+        -->
+        <x:Double x:Key="ReadingMeasure">620</x:Double>
     </Styles.Resources>
 
     <Style Selector="Window">

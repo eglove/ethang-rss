@@ -155,7 +155,10 @@
             <!-- Reader -->
             <Grid Grid.Column="3" RowDefinitions="Auto,Auto,*">
                 <Border Grid.Row="0" Padding="24,18,24,10">
-                    <StackPanel Spacing="8">
+                    <!-- The heading is held to the same measure as the body: a title that runs wider
+                         than the text beneath it reads as a mistake. -->
+                    <StackPanel Spacing="8" MaxWidth="{StaticResource ReadingMeasure}"
+                                HorizontalAlignment="Left">
                         <TextBlock Classes="article-title" Text="{Binding ReaderTitle}" />
                         <TextBlock Classes="meta" Text="{Binding ReaderMeta}" />
                     </StackPanel>
@@ -172,13 +175,9 @@
                 </Border>
 
                 <ScrollViewer Grid.Row="2" Padding="24,4,24,24" IsVisible="{Binding HasReaderArticle}">
-                    <!--
-                        The article column is held to a readable measure rather than the width of the
-                        window. 65 characters is the long-standing figure for comfortable reading;
-                        at the body's 15px that is about 620px, and the cap stops a wide window from
-                        stretching the lines further.
-                    -->
-                    <StackPanel Spacing="12" MaxWidth="620" HorizontalAlignment="Left">
+                    <!-- The same measure as the title above it. -->
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource ReadingMeasure}"
+                                HorizontalAlignment="Left">
                         <!-- What reading mode has to say about this article: its page gave no more
                              text, or the page could not be read. Hidden when there is nothing to report. -->
                         <TextBlock Name="ReaderNote" Classes="meta" TextWrapping="Wrap"

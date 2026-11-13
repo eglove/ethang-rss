@@ -169,6 +169,44 @@ public sealed class ReaderPaneRenderTests
     }
 
     [AvaloniaFact]
+    public void The_title_is_held_to_the_same_measure_as_the_body()
+    {
+        var (window, model, host) = Show();
+
+        // A heading that runs wider than the text under it reads as a mistake, so the two share
+        // one measure rather than each carrying its own number.
+        var column = (Control)host.Parent!;
+        var heading = window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .First(block => block.Classes.Contains("article-title"));
+        var headingColumn = (Control)heading.Parent!;
+
+        Assert.True(headingColumn.MaxWidth > 0, "the title has no measure of its own");
+        Assert.Equal(column.MaxWidth, headingColumn.MaxWidth);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_title_does_not_grow_past_its_measure_when_the_window_widens()
+    {
+        var (window, _, _) = Show();
+
+        var heading = window.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .First(block => block.Classes.Contains("article-title"));
+        var headingColumn = (Control)heading.Parent!;
+
+        window.Width = 1900;
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(headingColumn.Bounds.Width <= headingColumn.MaxWidth + 1,
+            $"title grew past its measure: {headingColumn.Bounds.Width} > {headingColumn.MaxWidth}");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void The_mark_all_button_is_offered_for_the_current_view()
     {
         var (window, _, _) = Show();
