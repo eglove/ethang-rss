@@ -111,6 +111,41 @@ public sealed class HtmlContentTests
     }
 
     [Fact]
+    public void Consecutive_paragraphs_stay_separate_blocks()
+    {
+        // The block matcher is anchored, so a tag that is not at the very start of the remaining
+        // text used to be skipped and the paragraphs after it ran together into one block.
+        var body = Parse("<p>One.</p><p>Two.</p><p>Three.</p>");
+
+        Assert.Equal(3, body.Blocks.Count);
+        Assert.Equal(new[] { "One.", "Two.", "Three." },
+            body.Blocks.Cast<ParagraphBlock>().Select(block => block.PlainText));
+    }
+
+    [Fact]
+    public void Whitespace_between_blocks_does_not_become_a_paragraph()
+    {
+        // Real feed bodies are full of blank lines between tags. A run that is only whitespace is
+        // not a paragraph, and rendering it as one puts an empty gap in the article.
+        var body = Parse("<p>One.</p>\n\n\n<p>Two.</p>");
+
+        Assert.Equal(2, body.Blocks.Count);
+        Assert.All(body.Blocks.Cast<ParagraphBlock>(), block =>
+            Assert.False(string.IsNullOrWhiteSpace(block.PlainText)));
+    }
+
+    [Fact]
+    public void A_paragraph_followed_by_a_heading_keeps_both()
+    {
+        var body = Parse("<p>Intro.</p><h2>A section</h2><p>Body.</p>");
+
+        Assert.Equal(3, body.Blocks.Count);
+        Assert.IsType<ParagraphBlock>(body.Blocks[0]);
+        Assert.Equal("A section", Assert.IsType<HeadingBlock>(body.Blocks[1]).Text);
+        Assert.Equal("Body.", Assert.IsType<ParagraphBlock>(body.Blocks[2]).PlainText);
+    }
+
+    [Fact]
     public void A_quoted_attribute_containing_a_bracket_does_not_leak_into_the_text()
     {
         // Tailwind-style values such as class="[&>a]:hidden" put a '>' inside a quoted attribute.

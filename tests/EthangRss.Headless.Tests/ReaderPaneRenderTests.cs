@@ -147,6 +147,28 @@ public sealed class ReaderPaneRenderTests
     }
 
     [AvaloniaFact]
+    public void The_article_column_is_held_to_a_readable_measure()
+    {
+        var (window, _, host) = Show();
+
+        // A full-width line on a wide window is hard to track back from. The column is capped at
+        // roughly 65 characters so the text keeps a readable measure whatever the window does.
+        var column = host.Parent as Control;
+        Assert.NotNull(column);
+        Assert.True(column!.MaxWidth > 0 && column.MaxWidth < 1000,
+            $"expected a capped reading measure, got MaxWidth={column.MaxWidth}");
+
+        window.Width = 1600;
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        Dispatcher.UIThread.RunJobs();
+
+        Assert.True(column.Bounds.Width <= column.MaxWidth + 1,
+            $"column grew past its measure: {column.Bounds.Width} > {column.MaxWidth}");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void The_mark_all_button_is_offered_for_the_current_view()
     {
         var (window, _, _) = Show();

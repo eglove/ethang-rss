@@ -153,7 +153,14 @@ public static class ArticleRenderer
         }
     }
 
-    private static Control BuildParagraph(ParagraphBlock paragraph, Action<string> openUrl)
+    /// <summary>
+    /// One paragraph as a TextBlock of inline runs. Public so the link hit test can be exercised
+    /// against a real laid-out paragraph rather than a hand-built one.
+    /// </summary>
+    public static TextBlock BuildParagraph(ParagraphBlock paragraph, Action<string> openUrl) =>
+        BuildParagraphCore(paragraph, openUrl);
+
+    private static TextBlock BuildParagraphCore(ParagraphBlock paragraph, Action<string> openUrl)
     {
         var text = new TextBlock
         {
@@ -171,22 +178,43 @@ public static class ArticleRenderer
                 FontFamily = run.IsCode ? new FontFamily("Cascadia Mono, Consolas, monospace") : FontFamily.Default,
             };
 
-            if (run.Href is { Length: > 0 })
+            if (run.Href is { Length: > 0 } href)
             {
                 inline.Foreground = new SolidColorBrush(Color.Parse("#A58BFF"));
                 inline.TextDecorations = TextDecorations.Underline;
+
+                // A Run has no href of its own, so the renderer records the address against it. That
+                // is what lets a click be resolved to the words actually under the pointer.
+                LinkHit.Register(text, inline, href);
             }
 
             text.Inlines?.Add(inline);
         }
 
-        // Links are clickable through a single scripted handler rather than one TextBlock per run.
-        var href = paragraph.Runs.FirstOrDefault(run => run.Href is not null)?.Href;
-        if (href is not null)
+        // Only the linked words are a target. The whole block used to be clickable whenever it
+        // mentioned a link, so every sentence in an article that cited one report opened it.
+        text.PointerPressed += (_, eventArgs) =>
         {
-            text.PointerPressed += (_, _) => openUrl(href);
-            text.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand);
-        }
+            if (LinkHit.HrefAt(text, eventArgs.GetPosition(text)) is { } target)
+            {
+                openUrl(target);
+            }
+        };
+
+        text.PointerMoved += (_, eventArgs) =>
+        {
+            // The hand cursor follows the linked words rather than the whole paragraph, so the
+            // pointer says the same thing the click does.
+            var overLink = LinkHit.HrefAt(text, eventArgs.GetPosition(text)) is not null;
+            var wanted = overLink
+                ? new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+                : Avalonia.Input.Cursor.Default;
+
+            if (!ReferenceEquals(text.Cursor, wanted))
+            {
+                text.Cursor = wanted;
+            }
+        };
 
         return text;
     }

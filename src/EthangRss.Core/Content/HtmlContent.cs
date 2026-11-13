@@ -301,8 +301,10 @@ public static partial class HtmlContent
             ? WebUtility.HtmlDecode(TagStripper().Replace(raw, string.Empty))
             : WebUtility.HtmlDecode(raw);
 
+        // A run that is only whitespace is the blank line between two blocks, not a paragraph.
+        // Keeping it draws an empty gap in the middle of the article.
         text = Whitespace().Replace(text, " ");
-        if (text.Length == 0)
+        if (string.IsNullOrWhiteSpace(text))
         {
             return;
         }
@@ -353,7 +355,10 @@ public static partial class HtmlContent
     [GeneratedRegex(@"<(script|style)\b[^>]*>.*?</\1\s*>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
     private static partial Regex RemoveScriptAndStyle();
 
-    [GeneratedRegex(@"^\s*<(h[1-6]|p|div|section|article|ul|ol|blockquote|pre|img|hr|figure)\b[^>]*>", RegexOptions.IgnoreCase)]
+    // Not anchored: the search starts at the current position in the remaining text, and an
+    // anchored pattern only ever matched a tag at the very start of the document. Every later
+    // block was skipped and the paragraphs after the first ran together into one block.
+    [GeneratedRegex(@"<(h[1-6]|p|div|section|article|ul|ol|blockquote|pre|img|hr|figure)\b[^>]*>", RegexOptions.IgnoreCase)]
     private static partial Regex BlockTag();
 
     [GeneratedRegex(@"<li\b[^>]*>(.*?)</li\s*>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]

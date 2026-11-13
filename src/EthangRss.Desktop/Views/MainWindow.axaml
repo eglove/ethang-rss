@@ -172,7 +172,13 @@
                 </Border>
 
                 <ScrollViewer Grid.Row="2" Padding="24,4,24,24" IsVisible="{Binding HasReaderArticle}">
-                    <StackPanel Spacing="12">
+                    <!--
+                        The article column is held to a readable measure rather than the width of the
+                        window. 65 characters is the long-standing figure for comfortable reading;
+                        at the body's 15px that is about 620px, and the cap stops a wide window from
+                        stretching the lines further.
+                    -->
+                    <StackPanel Spacing="12" MaxWidth="620" HorizontalAlignment="Left">
                         <!-- What reading mode has to say about this article: its page gave no more
                              text, or the page could not be read. Hidden when there is nothing to report. -->
                         <TextBlock Name="ReaderNote" Classes="meta" TextWrapping="Wrap"
